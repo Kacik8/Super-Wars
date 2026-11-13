@@ -655,7 +655,7 @@ function draw(){const s=V.s;cx.setTransform(1,0,0,1,0,0);cx.fillStyle=SEA;cx.fil
  for(const p of SV){if(!vis(p.bb))continue;cx.fillStyle=p.col;cx.fill(p.path,'evenodd')}
  if(sel&&sel.t=='s'){cx.fillStyle='rgba(255,216,74,.45)';cx.fill(sel.path,'evenodd');cx.lineWidth=2.2/s;cx.strokeStyle='#fff';cx.stroke(sel.path);cx.lineWidth=.8/s}
  cx.lineWidth=.8/s;cx.strokeStyle='rgba(0,0,0,.5)';
- if(HIST_FEATURES){for(const f of HIST_FEATURES){if(!vis(f.bb))continue;const c=f.country;cx.fillStyle=`hsl(${c.h.toFixed(0)},${c.s.toFixed(0)}%,${Math.max(28,Math.min(68,c.l))}%)`;cx.fill(f.path,'evenodd');cx.strokeStyle='rgba(0,0,0,.62)';cx.lineWidth=.85/s;cx.stroke(f.path)}if(s>18){cx.strokeStyle='rgba(255,255,255,.12)';cx.lineWidth=.45/s;for(const p of PV)if(vis(p.bb))cx.stroke(p.path)}}else{const me=G.players[G.cur]?.c,selected=sel&&sel.t==='p'?sel.c:null;const relevantCountry=c=>!!(c&&(c===me||c===selected||c===hoverCountry||(me&&me.nb&&me.nb.has(c))||(selected&&selected.nb&&selected.nb.has(c))||(me&&G.war&&G.war[DK(me,c)])));for(const p of PV){if(!vis(p.bb))continue;cx.fillStyle=p.col;cx.fill(p.path,'evenodd');if(relevantCountry(p.c)&&p.c.ps.length>1&&!['Kosowo','Liechtenstein','Andora','Monako','San Marino'].includes(p.c.n)){cx.lineWidth=(p.c===me||p.c===selected?1.15:.78)/s;cx.strokeStyle=(p.c===me||p.c===selected)?'rgba(255,255,255,.88)':'rgba(12,25,48,.82)';cx.stroke(p.path)}}}
+ if(HIST_FEATURES){for(const f of HIST_FEATURES){if(!vis(f.bb))continue;const c=f.country;cx.fillStyle=`hsl(${c.h.toFixed(0)},${c.s.toFixed(0)}%,${Math.max(28,Math.min(68,c.l))}%)`;cx.fill(f.path,'evenodd');cx.strokeStyle='rgba(0,0,0,.62)';cx.lineWidth=.85/s;cx.stroke(f.path)}if(s>18){cx.strokeStyle='rgba(255,255,255,.12)';cx.lineWidth=.45/s;for(const p of PV)if(vis(p.bb))cx.stroke(p.path)}}else{const me=G.players[G.cur]?.c,selected=sel&&sel.t==='p'?sel.c:null;const relevantCountry=c=>{if(!c)return false;if(c===me||c===selected||c===hoverCountry)return true;if(window.SW_SHOW_OTHER_PROV===false)return false;return !!( (me&&me.nb&&me.nb.has(c))||(selected&&selected.nb&&selected.nb.has(c))||(me&&G.war&&G.war[DK(me,c)]) );};for(const p of PV){if(!vis(p.bb))continue;cx.fillStyle=p.col;cx.fill(p.path,'evenodd');if(relevantCountry(p.c)&&p.c.ps.length>1&&!['Kosowo','Liechtenstein','Andora','Monako','San Marino'].includes(p.c.n)){cx.lineWidth=(p.c===me||p.c===selected?1.15:.78)/s;cx.strokeStyle=(p.c===me||p.c===selected)?'rgba(255,255,255,.88)':'rgba(12,25,48,.82)';cx.stroke(p.path)}}}
  // Okupacja nie zmienia granic państwa. Kontur zmienia się dopiero po formalnym pokoju.
  for(const p of PV){if(!p.occ||!vis(p.bb))continue;cx.save();cx.globalAlpha=.30;cx.fillStyle=ccol(p.occ);cx.fill(p.path,'evenodd');cx.globalAlpha=1;cx.save();cx.clip(p.path,'evenodd');cx.strokeStyle=ccol(p.occ);cx.lineWidth=2.8/s;const step=7/s;const bb=p.bb;for(let z=bb[0]-((bb[3]-bb[1]));z<bb[2];z+=step){cx.beginPath();cx.moveTo(z,bb[3]);cx.lineTo(z+(bb[3]-bb[1]),bb[1]);cx.stroke()}cx.restore();cx.restore()}
  if(G.pc){cx.lineWidth=2.6/s;for(const q of G.pc.take){cx.fillStyle='rgba(60,210,90,.55)';cx.strokeStyle='#1f8f3a';cx.fill(q.path,'evenodd');cx.stroke(q.path)}for(const q of G.pc.give){cx.fillStyle='rgba(235,60,60,.55)';cx.strokeStyle='#a01818';cx.fill(q.path,'evenodd');cx.stroke(q.path)}}
@@ -1030,15 +1030,15 @@ function microHit(px,py){for(const c of C){if(!isMicro(c))continue;const b=c.ps[
 function drawSeaWaves(T){const g=OX,phase=T*.00042,left=-70,right=W+70;for(const sea of SV){const bb=sea.bb;if(bb[2]*V.s+V.tx<-30||bb[0]*V.s+V.tx>W+30||bb[3]*V.s+V.ty<-30||bb[1]*V.s+V.ty>H+30)continue;g.save();g.setTransform(dpr*V.s,0,0,dpr*V.s,dpr*V.tx,dpr*V.ty);g.clip(sea.path,'evenodd');g.setTransform(dpr,0,0,dpr,0,0);g.lineWidth=1.15;g.strokeStyle='rgba(205,235,255,.17)';for(let band=-1;band<H/76+2;band++){const base=band*76+((phase*24)%76);g.beginPath();for(let x=left;x<=right;x+=30){const y=base+Math.sin(x*.018+phase*2+band*.7)*3.1+Math.sin(x*.009-phase+band)*1.6;if(x===left)g.moveTo(x,y);else g.lineTo(x,y)}g.stroke();g.beginPath();for(let x=left+12;x<=right;x+=42){const y=base+12+Math.sin(x*.014-phase*1.5+band)*2.2;if(x===left+12)g.moveTo(x,y);else g.lineTo(x,y)}g.strokeStyle='rgba(125,205,245,.10)';g.lineWidth=.85;g.stroke();g.strokeStyle='rgba(205,235,255,.17)';g.lineWidth=1.15}g.restore()}}
 function drawOver(s,T){const cx=OX;cx.setTransform(dpr,0,0,dpr,0,0);cx.clearRect(0,0,W,H);drawSeaWaves(T);cx.textAlign='center';cx.textBaseline='middle';
  const X=x=>x*s+V.tx,Y=y=>y*s+V.ty,inb=(x,y)=>x>-80&&y>-30&&x<W+80&&y<H+30,SF='Poppins,system-ui,sans-serif';
- for(const c of C){if(!isMicro(c))continue;const p=c.ps[0],b=p.bb;if((b[2]-b[0])*s>8)continue;const m=mid(p),x=X(m[0]),y=Y(m[1]);if(!inb(x,y))continue;
-  cx.beginPath();cx.arc(x,y,5.5,0,7);cx.fillStyle=c.owner?c.owner.color:p.col;cx.fill();cx.lineWidth=2.5;cx.strokeStyle='#fff';cx.stroke();cx.lineWidth=1;cx.strokeStyle='#1a1008';cx.stroke()}
+ /* markery mikro: tylko skrypt końcowy (małe kropki przy oddaleniu) */
+
  const lab=(t,x,y,sz,it)=>{cx.font=(it?'italic 800 ':'800 ')+sz+'px '+SF;cx.lineJoin='round';cx.lineWidth=3.2;cx.strokeStyle='rgba(255,250,235,.88)';cx.strokeText(t,x,y);cx.fillStyle='#2a1c0c';cx.fillText(t,x,y)};
  const territories=new Map();for(const p of PV){const h=holder(p);if(h){let a=territories.get(h);if(!a)territories.set(h,a=[]);a.push(p)}}
  for(const c of C){const territory=territories.get(c)||[];if(!territory.length)continue;let sx=0,sy=0,sa=0;for(const p of territory){const m=mid(p),w=p.a||1;sx+=m[0]*w;sy+=m[1]*w;sa+=w}const center=[sx/sa,sy/sa];
   const mi=isMicro(c),w=mi?0:(Math.max(...territory.map(p=>p.bb[2]))-Math.min(...territory.map(p=>p.bb[0])))*s;if(mi?s<25:w<55)continue;
   const x=X(center[0]),y=Y(sy/sa);if(!inb(x,y))continue;
   lab(c.n,x,mi?y-13:y,mi?12:clamp(w/c.n.length*1.15,9,26),0)}
- if(s>14)for(const p of PV){const w=(p.bb[2]-p.bb[0])*s;if(w<90)continue;const m=mid(p),x=X(m[0]),y=Y(m[1]);if(!inb(x,y))continue;lab(p.n,x,y+(p.c.ps.length?13:0),clamp(w/p.n.length*1.1,9,13),1)}
+ if(s>14)for(const p of PV){if(window.SW_SHOW_OTHER_PROV===false){const me2=G.players&&G.players[G.cur]&&G.players[G.cur].c;const sel2=sel&&sel.t==='p'?sel.c:null;if(p.c!==me2&&p.c!==sel2)continue;}const w=(p.bb[2]-p.bb[0])*s;if(w<90)continue;const m=mid(p),x=X(m[0]),y=Y(m[1]);if(!inb(x,y))continue;lab(p.n,x,y+(p.c.ps.length?13:0),clamp(w/p.n.length*1.1,9,13),1)}
  /* Kierunki marszu – strzałki od oddziału do celu rozkazu. */
  for(const c of C)for(const u of c.units||[]){if(!u.dest||u.dest===u.p)continue;const a=mid(u.p),b=mid(u.dest),x1=X(a[0]),y1=Y(a[1]),x2=X(b[0]),y2=Y(b[1]);if(!inb(x1,y1)&&!inb(x2,y2))continue;
   const ang=Math.atan2(y2-y1,x2-x1),len=Math.hypot(x2-x1,y2-y1);if(len<8)continue;
@@ -1856,10 +1856,10 @@ resize();requestAnimationFrame(loop);fit(-170,-83,180,58);
 /* ===== v26: granice aktualnych państw, stolice, tryby mapy, gospodarka i dowódcy ===== */
 (()=>{
  const style=document.createElement('style');style.textContent=`#swtools{position:absolute;z-index:12;top:12px;left:12px;display:flex;gap:6px;flex-wrap:wrap;max-width:min(560px,75vw);pointer-events:auto;touch-action:pan-y;user-select:none}#swtools button{background:#172c3a;color:#f5f2e9;border:1px solid #78909c;border-radius:8px;padding:7px 10px;font-size:12px;box-shadow:0 2px 8px #0005}#swtools button.on{background:#b68a3b;color:#171717}#swpanel{position:absolute;z-index:15;inset:12% 12%;background:#172b38;color:#f4f0e7;border:1px solid #78909c;border-radius:14px;padding:18px;overflow:auto;box-shadow:0 8px 35px #0009}#swpanel button{margin:4px;padding:8px;border-radius:7px;border:1px solid #8ba0a8;background:#294553;color:white}#swpanel .candidate{display:inline-block;width:47%;vertical-align:top;text-align:left}#swpanel h2{margin-top:0}#swpanel p{line-height:1.45}#swclose{float:right}`;document.head.append(style);
- const tools=document.createElement('div');tools.id='swtools';tools.innerHTML='<button id="swdrag" title="Przeciągnij pasek" aria-label="Przeciągnij pasek">⠿</button><button data-map="political" class="on">Polityczna</button><button data-map="economic">Ekonomiczna</button><button data-map="population">Ludność</button><button id="swlabels" class="on">Napisy: ON</button><button id="swtut">Tutorial</button><button id="swreg">Ustrój</button><button id="swreligion">Religia</button><button id="swsettings">⚙ Ustawienia</button>';
+ const tools=document.createElement('div');tools.id='swtools';tools.innerHTML='<button id="swdrag" title="Przeciągnij pasek" aria-label="Przeciągnij pasek">⠿</button><button data-map="political" class="on">Polityczna</button><button data-map="economic">Ekonomiczna</button><button data-map="population">Ludność</button><button id="swlabels" class="on">Napisy: ON</button><button id="swarmy" class="on">Wojsko: ON</button><button id="swfx" class="on">Efekty: ON</button><button id="swbld" class="on">Budynki: ON</button><button id="swtex" class="on">Tekstura: ON</button><button id="swprov" class="on">Inne kraje: ON</button><button id="swtut">Tutorial</button><button id="swreg">Ustrój</button><button id="swreligion">Religia</button><button id="swsettings">⚙ Ustawienia</button>';
  document.getElementById('wrap').append(tools);
  const panel=document.createElement('div');panel.id='swpanel';panel.hidden=true;document.getElementById('wrap').append(panel);
- let mapMode='political',labels=true,tutStep=0;
+ let mapMode='political',labels=true,tutStep=0;window.SW_SHOW_ARMIES=true;window.SW_SHOW_FX=true;window.SW_SHOW_BUILDINGS=true;window.SW_SHOW_TEX=true;window.SW_SHOW_OTHER_PROV=true;
  const oldDraw=draw;
  // Dokładne krawędzie prowincji z oryginalnych wielokątów. Granice kraju są rysowane wyłącznie
  // tam, gdzie po obu stronach krawędzi znajdują się prowincje różnych aktualnych właścicieli.
@@ -1895,7 +1895,7 @@ resize();requestAnimationFrame(loop);fit(-170,-83,180,58);
  drawOver=function(s,T){if(!labels){OX.setTransform(dpr,0,0,dpr,0,0);OX.clearRect(0,0,W,H);return}oldDrawOver(s,T)};
  const oldDrawCaps=drawCapitals;
  drawCapitals=function(s,T){if(!labels)return;oldDrawCaps(s,T)};
- tools.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='swsettings'){if(typeof settingsHTML==='function')settingsHTML();return}if(b.dataset.map){mapMode=b.dataset.map;tools.querySelectorAll('[data-map]').forEach(x=>x.classList.toggle('on',x===b));draw()}else if(b.id==='swlabels'){labels=!labels;b.textContent='Napisy: '+(labels?'ON':'OFF');b.classList.toggle('on',labels);if(!labels){OX.clearRect(0,0,OV.width,OV.height)}else sched()}else if(b.id==='swtut')showTutorial();else if(b.id==='swreg')showRegime()});
+ tools.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='swsettings'){if(typeof settingsHTML==='function')settingsHTML();return}if(b.dataset.map){mapMode=b.dataset.map;tools.querySelectorAll('[data-map]').forEach(x=>x.classList.toggle('on',x===b));draw()}else if(b.id==='swlabels'){labels=!labels;b.textContent='Napisy: '+(labels?'ON':'OFF');b.classList.toggle('on',labels);if(!labels){OX.clearRect(0,0,OV.width,OV.height)}else sched()}else if(b.id==='swarmy'){window.SW_SHOW_ARMIES=!window.SW_SHOW_ARMIES;b.textContent='Wojsko: '+(window.SW_SHOW_ARMIES?'ON':'OFF');b.classList.toggle('on',window.SW_SHOW_ARMIES);sched()}else if(b.id==='swfx'){window.SW_SHOW_FX=!window.SW_SHOW_FX;b.textContent='Efekty: '+(window.SW_SHOW_FX?'ON':'OFF');b.classList.toggle('on',window.SW_SHOW_FX);try{const F=window.SW_FX;if(F){F.life=window.SW_SHOW_FX;F.creatures=window.SW_SHOW_FX;F.birds=window.SW_SHOW_FX;F.particles=window.SW_SHOW_FX&&F.particles!==false}}catch(_){ }sched()}else if(b.id==='swbld'){window.SW_SHOW_BUILDINGS=!window.SW_SHOW_BUILDINGS;b.textContent='Budynki: '+(window.SW_SHOW_BUILDINGS?'ON':'OFF');b.classList.toggle('on',window.SW_SHOW_BUILDINGS);draw()}else if(b.id==='swtex'){window.SW_SHOW_TEX=!window.SW_SHOW_TEX;b.textContent='Tekstura: '+(window.SW_SHOW_TEX?'ON':'OFF');b.classList.toggle('on',window.SW_SHOW_TEX);try{const F=window.SW_FX;if(F)F.tex=!!window.SW_SHOW_TEX}catch(_){ }draw()}else if(b.id==='swprov'){window.SW_SHOW_OTHER_PROV=!window.SW_SHOW_OTHER_PROV;b.textContent='Inne kraje: '+(window.SW_SHOW_OTHER_PROV?'ON':'OFF');b.classList.toggle('on',window.SW_SHOW_OTHER_PROV);draw()}else if(b.id==='swtut')showTutorial();else if(b.id==='swreg')showRegime()});
  function showTutorial(){panel.hidden=false;panel.innerHTML=`<button id="swclose">Zamknij ✕</button><h2>🎓 Tutorial — pierwsze kroki</h2><p>Etap ${tutStep+1} z 4</p><h3>${['Wybierz prowincję sąsiada','Rozpocznij pierwszą wojnę','Zdobądź prowincję','Zawrzyj pierwszy sojusz'][tutStep]}</h3><p>${['Kliknij sąsiednią prowincję innego państwa na mapie, aby zobaczyć jego dane.','W panelu dyplomacji wybierz wypowiedzenie wojny. Pamiętaj o przewadze wojska i punktach akcji.','Wybierz oddział, kliknij „Przenieś”, a następnie kliknij docelową prowincję. Po dotarciu rozegra się bitwa.','Otwórz panel kraju, wybierz państwo z dobrymi relacjami i zaproponuj sojusz.'][tutStep]}</p><p>Wskazówka: rozwijaj gospodarkę, dbaj o morale i nie wysyłaj całej armii z jednej prowincji.</p><button id="swtutprev">Wstecz</button><button id="swtutnext">${tutStep===3?'Od początku':'Dalej'}</button>`}
  function showRegime(){const c=G.players[G.cur]?.c;if(!c){toast('Najpierw rozpocznij grę');return}const regimes=[['monarchy','Monarchia','+15% siły armii',1.15,1],['republic','Republika','+12% dochodu',1,1.12],['communism','Komunizm','+18% produkcji zasobów',1,1],['empire','Cesarstwo','+10% armii i +5% dochodu',1.1,1.05]];panel.hidden=false;panel.innerHTML=`<button id="swclose">Zamknij ✕</button><h2>🏛️ Ustrój — ${esc(c.n)}</h2><p>Zmiana ustroju kosztuje 2% obecnego skarbu (minimum 100).</p>${regimes.map(r=>`<button data-regime="${r[0]}"><b>${r[1]}</b><br>${r[2]}${c.regime===r[0]?' · AKTYWNY':''}</button>`).join('')}`}
  panel.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='swclose'){panel.hidden=true;return}if(b.id==='swtutnext'){tutStep=(tutStep+1)%4;showTutorial()}if(b.id==='swtutprev'){tutStep=Math.max(0,tutStep-1);showTutorial()}if(b.dataset.regime){const c=G.players[G.cur]?.c,cost=Math.max(100,c.money*.02);if(c.money<cost){toast('Za mało złota');return}c.money-=cost;c.regime=b.dataset.regime;toast('Ustrój zmieniony: '+b.dataset.regime);showRegime();renderHUD()}});
@@ -2066,9 +2066,14 @@ resize();requestAnimationFrame(loop);fit(-170,-83,180,58);
  <div class="sw-setting"><div><b>⚔️ Animacje bitew innych państw</b><small>Pokazuj bitwy między turami. Wyłączenie nadal rozstrzyga walki, ale bez animacji.</small></div><button class="sw-toggle ${window.SW_BATTLE_ANIMS?'enabled':'disabled'}" data-setting="battles">${window.SW_BATTLE_ANIMS?'WŁĄCZONE':'WYŁĄCZONE'}</button></div>
  <div class="sw-setting"><div><b>🔊 Efekty dźwiękowe</b><small>Odgłosy bitew, trafień, zakupów i innych akcji.</small></div><button class="sw-toggle ${window.SW_SFX?'enabled':'disabled'}" data-setting="sfx">${window.SW_SFX?'WŁĄCZONE':'WYŁĄCZONE'}</button></div>
  <div class="sw-setting"><div><b>🎵 Muzyka w tle</b><small>Skoczna, marszowo-folkowa muzyka do prowadzenia państwa i wojen.</small></div><button class="sw-toggle ${musicOn?'enabled':'disabled'}" data-setting="music">${musicOn?'WŁĄCZONA':'WYŁĄCZONA'}</button></div>
- <div class="sw-setting"><div><b>📊 Licznik FPS</b><small>Pokazuje aktualną liczbę klatek na sekundę w prawym górnym rogu.</small></div><button class="sw-toggle ${window.SW_SHOW_FPS?'enabled':'disabled'}" data-setting="fps">${window.SW_SHOW_FPS?'WŁĄCZONY':'WYŁĄCZONY'}</button></div>`}
+ <div class="sw-setting"><div><b>📊 Licznik FPS</b><small>Pokazuje aktualną liczbę klatek na sekundę w prawym górnym rogu.</small></div><button class="sw-toggle ${window.SW_SHOW_FPS?'enabled':'disabled'}" data-setting="fps">${window.SW_SHOW_FPS?'WŁĄCZONY':'WYŁĄCZONY'}</button></div>
+ <div class="sw-setting"><div><b>🪖 Widoczność wojska</b><small>Ikony armii i flot na mapie (jak napisy – możesz wyłączyć dla czytelności).</small></div><button class="sw-toggle ${window.SW_SHOW_ARMIES!==false?'enabled':'disabled'}" data-setting="armies">${window.SW_SHOW_ARMIES!==false?'WŁĄCZONE':'WYŁĄCZONE'}</button></div>
+ <div class="sw-setting"><div><b>🦆 Efekty żywe (UFO, ptaki, foki…)</b><small>UFO, kaczki, foki, manaty, wieloryby i inne ozdoby na mapie.</small></div><button class="sw-toggle ${window.SW_SHOW_FX!==false?'enabled':'disabled'}" data-setting="fx">${window.SW_SHOW_FX!==false?'WŁĄCZONE':'WYŁĄCZONE'}</button></div>
+ <div class="sw-setting"><div><b>🏗️ Budynki na mapie</b><small>Emoji budynków (fabryki, porty, szkoły…) na prowincjach.</small></div><button class="sw-toggle ${window.SW_SHOW_BUILDINGS!==false?'enabled':'disabled'}" data-setting="buildings">${window.SW_SHOW_BUILDINGS!==false?'WŁĄCZONE':'WYŁĄCZONE'}</button></div>
+ <div class="sw-setting"><div><b>🎨 Tekstura mapy</b><small>Wzór/papier na prowincjach. Wyłączenie może poprawić FPS.</small></div><button class="sw-toggle ${window.SW_SHOW_TEX!==false?'enabled':'disabled'}" data-setting="tex">${window.SW_SHOW_TEX!==false?'WŁĄCZONE':'WYŁĄCZONE'}</button></div>
+ <div class="sw-setting"><div><b>🗺️ Prowincje innych krajów</b><small>Gdy OFF – granice prowincji tylko u Ciebie i u zaznaczonego kraju (reszta bez wewnętrznych granic).</small></div><button class="sw-toggle ${window.SW_SHOW_OTHER_PROV!==false?'enabled':'disabled'}" data-setting="otherprov">${window.SW_SHOW_OTHER_PROV!==false?'WŁĄCZONE':'WYŁĄCZONE'}</button></div>`}
  toolsEl?.addEventListener('click',e=>{if(e.target.closest('#swsettings'))settingsHTML()});
- panelEl?.addEventListener('click',e=>{const b=e.target.closest('[data-setting]');if(!b)return;const k=b.dataset.setting;if(k==='battles')window.SW_BATTLE_ANIMS=!window.SW_BATTLE_ANIMS;else if(k==='sfx')window.SW_SFX=!window.SW_SFX;else if(k==='music'){if(musicOn)stopMusic();else startMusic()}else if(k==='fps'){window.SW_SHOW_FPS=!window.SW_SHOW_FPS;fpsEl.hidden=!window.SW_SHOW_FPS;if(window.SW_SHOW_FPS){window.SW_FPS_FRAMES=0;window.SW_FPS_LAST=0}}settingsHTML()});
+ panelEl?.addEventListener('click',e=>{const b=e.target.closest('[data-setting]');if(!b)return;const k=b.dataset.setting;if(k==='battles')window.SW_BATTLE_ANIMS=!window.SW_BATTLE_ANIMS;else if(k==='sfx')window.SW_SFX=!window.SW_SFX;else if(k==='music'){if(musicOn)stopMusic();else startMusic()}else if(k==='fps'){window.SW_SHOW_FPS=!window.SW_SHOW_FPS;fpsEl.hidden=!window.SW_SHOW_FPS;if(window.SW_SHOW_FPS){window.SW_FPS_FRAMES=0;window.SW_FPS_LAST=0}}else if(k==='armies'){window.SW_SHOW_ARMIES=!window.SW_SHOW_ARMIES;const ab=document.getElementById('swarmy');if(ab){ab.textContent='Wojsko: '+(window.SW_SHOW_ARMIES?'ON':'OFF');ab.classList.toggle('on',!!window.SW_SHOW_ARMIES)}}else if(k==='fx'){window.SW_SHOW_FX=!window.SW_SHOW_FX;try{const F=window.SW_FX;if(F){F.life=!!window.SW_SHOW_FX;F.creatures=!!window.SW_SHOW_FX;F.birds=!!window.SW_SHOW_FX}}catch(_){ }const fb=document.getElementById('swfx');if(fb){fb.textContent='Efekty: '+(window.SW_SHOW_FX?'ON':'OFF');fb.classList.toggle('on',!!window.SW_SHOW_FX)}}else if(k==='buildings'){window.SW_SHOW_BUILDINGS=!window.SW_SHOW_BUILDINGS;const bb=document.getElementById('swbld');if(bb){bb.textContent='Budynki: '+(window.SW_SHOW_BUILDINGS?'ON':'OFF');bb.classList.toggle('on',!!window.SW_SHOW_BUILDINGS)}}else if(k==='tex'){window.SW_SHOW_TEX=!window.SW_SHOW_TEX;try{const F=window.SW_FX;if(F)F.tex=!!window.SW_SHOW_TEX}catch(_){ }const tb=document.getElementById('swtex');if(tb){tb.textContent='Tekstura: '+(window.SW_SHOW_TEX?'ON':'OFF');tb.classList.toggle('on',!!window.SW_SHOW_TEX)}}else if(k==='otherprov'){window.SW_SHOW_OTHER_PROV=!window.SW_SHOW_OTHER_PROV;const pb=document.getElementById('swprov');if(pb){pb.textContent='Inne kraje: '+(window.SW_SHOW_OTHER_PROV?'ON':'OFF');pb.classList.toggle('on',!!window.SW_SHOW_OTHER_PROV)}}settingsHTML();try{sched();draw()}catch(_){}});
  const originalRunBattles=runBattles;
  runBattles=function(done){if(window.SW_BATTLE_ANIMS===false){const spots=battleSpots().sort((x,y)=>spotPl(y)-spotPl(x));for(const p of spots){const ev=prepBattle(p);if(ev)ev.apply()}done();return}return originalRunBattles(done)};
 })();
@@ -2614,6 +2619,7 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
   eye(g,.36,-.17,.045,sc);eye(g,.27,-.15,.03,sc);
   g.strokeStyle=INK;g.lineWidth=Math.max(.8,sc*.018)/sc;for(let i=0;i<3;i++){g.beginPath();g.moveTo(.5,-.06+i*.015);g.lineTo(.62,-.1+i*.06);g.stroke()}}
  function drawCreatures(s,T){
+  if(window.SW_SHOW_FX===false)return;
   const g=OX;let any=false;
   for(const c of CR){
    const gr=c.gr,x=c.wx*s+V.tx,y=c.wy*s+V.ty,sc=cl(gr.K*s,gr.min,gr.max)*c.sz;
@@ -2658,6 +2664,7 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
    if(b.age>1&&(b.age>50||b.x<-900||b.x>W+900||b.y<-900||b.y>H+900)){BIRDS.splice(i,1)}}}
  function wingShape(g){g.beginPath();g.moveTo(0,-.14);g.bezierCurveTo(-.5,-.58,-1.15,-.42,-1.55,.06);g.bezierCurveTo(-1.05,-.02,-.5,.2,0,.2);g.closePath()}
  function drawBird(g,b,T){
+  if(window.SW_SHOW_FX===false)return;
   const u=b.u,fl=Math.sin(b.age*b.f+b.ph),ang=.2+fl*.85,p=b.pal;
   // cień na mapie
   g.save();g.globalAlpha=.13;g.fillStyle='#0b2030';g.beginPath();g.ellipse(b.x+u*.8,b.y+u*3.2+Math.abs(fl)*2,u*1.1,u*.34,0,0,TAU);g.fill();g.restore();
@@ -2691,6 +2698,7 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
  }
  let patsReady=false,texCost=0,tvS=0,tvX=0,tvY=0,tvT=0,texTimer=0;
  window.SW_TEX=function(s,vis){
+  if(window.SW_SHOW_TEX===false)return;
   if(!FX.tex)return;if(!patsReady){try{makePats();patsReady=true}catch(e){FX.tex=false;return}}
   /* w trakcie przesuwania/zoomu pomijamy teksturę i doklejamy ją, gdy mapa się uspokoi */
   const now=performance.now();
@@ -2751,6 +2759,7 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
   g.fillStyle='rgba(255,130,150,.5)';g.beginPath();g.ellipse(.3,.05,.05,.03,0,0,TAU);g.fill()}
  const RB=['#ff595e','#ff924c','#ffca3a','#8ac926','#1982c4','#6a4c93'];
  function drawWhales(g,s,T){
+  if(window.SW_SHOW_FX===false)return;
   for(const w of WH){const u=Math.min(1,w.age/w.dur),aw=w.sz*1.5,ah=w.sz*.95,X0=w.wx*s+V.tx,Y0=w.wy*s+V.ty;if(X0<-200||X0>W+200||Y0<-200||Y0>H+200)continue;
    const x=X0+w.dir*(u-.5)*aw,y=Y0-Math.sin(Math.PI*u)*ah,dx=w.dir*aw,dy=-Math.cos(Math.PI*u)*Math.PI*ah,ang=Math.atan2(dy,dx),a=cl(Math.min(u,1-u)/.07,0,1);
    const ra=.6*Math.sin(Math.PI*cl((u-.25)/.55,0,1));
@@ -2817,6 +2826,7 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
    if(u.pt>3.6){u.ph='leave';u.pt=0;play('sparkle',.9);if(FX.particles){const k=V.s/u.s0;starBurst(u.x*k+V.tx,u.y*k+V.ty,14)}}}
   else{u.vx=(u.vx||0)+u.dir*900*dt;u.x+=u.vx*dt;u.y-=140*dt;const k=V.s/u.s0,sx=u.x*k+V.tx,sy=u.y*k+V.ty;if(sx<-140||sx>W+140||sy<-100||u.age>45){UF=null}}}
  function drawUfo(g,T){
+  if(window.SW_SHOW_FX===false)return;
   const u=UF;if(!u)return;g.save();g.translate(V.tx,V.ty);g.scale(V.s/u.s0,V.s/u.s0);const y=u.y+Math.sin(u.age*4)*3,tilt=cl((u.vx||0)*.0004,-.4,.4);
   if(u.ph==='hover'){const b=cl(u.pt/.5,0,1)*(u.pt>3.2?cl((3.6-u.pt)/.4,0,1):1),fl=.85+.15*Math.sin(T*.03);
    const gr=g.createLinearGradient(0,y,0,u.gy);gr.addColorStop(0,`rgba(200,255,160,${.6*b*fl})`);gr.addColorStop(1,`rgba(200,255,160,${.1*b})`);
@@ -2837,7 +2847,7 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
   if(!FX.life)return;
   if(T>nextWhale&&!document.hidden&&s>.5){nextWhale=T+rnd(20000,38000);if(WH.length<2)spawnWhale(s)}
   stepWhales(dt,s);stepUfo(dt,T)}
- function drawLife(s,T){const g=OX;drawWhales(g,s,T)}
+ function drawLife(s,T){if(window.SW_SHOW_FX===false)return;const g=OX;drawWhales(g,s,T)}
  function drawSky(g,s,T){if(!FX.life)return;drawAurora(g,s,T)}
  FX._spawn={whale:()=>spawnWhale(V.s),ufo:()=>{if(!UF)spawnUfo()},ships:()=>SHP.length};
 
@@ -3807,7 +3817,12 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
     const vis=q=>!(q[2]<l||q[0]>r||q[3]<t||q[1]>b)&&(q[2]-q[0]>px||q[3]-q[1]>px);
     const me=G.players&&G.players[G.cur]&&G.players[G.cur].c;
     const selected=sel&&sel.t==='p'?sel.c:(sel&&sel.t==='c'?sel:null);
-    const show=c=>!!(c&&(c===me||c===selected||(selected&&selected.nb&&selected.nb.has(c))||(me&&me.nb&&me.nb.has(c))));
+    const show=c=>{
+      if(!c)return false;
+      if(c===me||c===selected)return true;
+      if(window.SW_SHOW_OTHER_PROV===false)return false;
+      return !!( (selected&&selected.nb&&selected.nb.has(c))||(me&&me.nb&&me.nb.has(c)) );
+    };
     cx.save();
     cx.setTransform(dpr*s,0,0,dpr*s,dpr*V.tx,dpr*V.ty);
     cx.lineJoin='round';
@@ -3830,7 +3845,7 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
     }
     /* Budynki na warstwie mapy (POD napisami z overlay) */
     try{
-      if(s>=9&&!window.__swPan){
+      if(window.SW_SHOW_BUILDINGS!==false&&s>=9&&!window.__swPan){
         if(!window.__swBldCache||window.__swBldCacheTurn!==G.turn){
           const icons=['🌾','🏦','🏪','🏭','⛏️','🚢','🔬','🎓','🏛️','🏰','🛡️','🏥','⛪','🌲','🍖'];
           const cache=[];
@@ -3885,6 +3900,8 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
   const prevOver=drawOver;
   drawOver=function(s,T){
    prevOver(s,T);
+   /* Wyłączone w pasku: Wojsko OFF */
+   if(window.SW_SHOW_ARMIES===false)return;
    /* Zawsze rysuj armie przy zoomie – nie chowaj nawet podczas panningu/zoomu */
    // if(window.__swPan)return;  // WYŁĄCZONE – armie muszą być widoczne przy przybliżeniu
    try{
@@ -4053,8 +4070,8 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
    if(typeof isMicro==='function'){
     const _isMicro=isMicro;
     isMicro=function(c){
-     if(V&&V.s<1.2)return false;
-     return _isMicro(c);
+      /* przy oddaleniu (mały zoom) ZOSTAW znaczniki – łatwiej trafić */
+      return _isMicro(c);
     };
    }
   }catch(_){}
@@ -4378,32 +4395,73 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
    oraz scalony wygląd mikro-państw (Liechtenstein itd.) */
 (()=>{
  try{
-  /* ---- generowanie unikalnej flagi SVG ---- */
-  const REB_PATTERNS=[
-   (c1,c2,c3)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 18"><rect width="30" height="18" fill="${c1}"/><rect width="30" height="6" y="6" fill="${c2}"/><rect width="30" height="6" y="12" fill="${c3}"/></svg>`,
-   (c1,c2,c3)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 18"><rect width="10" height="18" fill="${c1}"/><rect x="10" width="10" height="18" fill="${c2}"/><rect x="20" width="10" height="18" fill="${c3}"/></svg>`,
-   (c1,c2,c3)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 18"><rect width="30" height="18" fill="${c1}"/><polygon points="0,0 14,9 0,18" fill="${c2}"/><circle cx="20" cy="9" r="3.2" fill="${c3}"/></svg>`,
-   (c1,c2,c3)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 18"><rect width="30" height="18" fill="${c1}"/><rect y="7" width="30" height="4" fill="${c2}"/><rect x="13" width="4" height="18" fill="${c2}"/><circle cx="15" cy="9" r="2.4" fill="${c3}"/></svg>`,
-   (c1,c2,c3)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 18"><rect width="30" height="18" fill="${c1}"/><polygon points="15,2 18,7 24,8 19,12 21,17 15,14 9,17 11,12 6,8 12,7" fill="${c2}"/><circle cx="15" cy="9" r="1.6" fill="${c3}"/></svg>`,
-   (c1,c2,c3)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 18"><rect width="30" height="9" fill="${c1}"/><rect y="9" width="30" height="9" fill="${c2}"/><circle cx="15" cy="9" r="4" fill="${c3}"/></svg>`,
-   (c1,c2,c3)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 18"><rect width="30" height="18" fill="${c1}"/><path d="M0 0 L30 18 M30 0 L0 18" stroke="${c2}" stroke-width="3"/><rect x="11" y="5" width="8" height="8" fill="${c3}"/></svg>`,
-   (c1,c2,c3)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 18"><rect width="30" height="18" fill="${c1}"/><polygon points="0,0 12,0 0,12" fill="${c2}"/><polygon points="30,18 18,18 30,6" fill="${c3}"/></svg>`
-  ];
-  const REB_PAL=[
-   ['#1a1a2e','#e94560','#f5f5f5'],['#0f3460','#e94560','#ffc93c'],['#1b4332','#d8f3dc','#40916c'],
-   ['#3d0c11','#c1121f','#fdf0d5'],['#22223b','#4a4e69','#f2e9e4'],['#042a2b','#5eb1bf','#fbf3d4'],
-   ['#2d1b00','#ff7b00','#ffd166'],['#1d3557','#a8dadc','#e63946'],['#10002b','#7b2cbf','#e0aaff'],
-   ['#1a0000','#6a040f','#f48c06'],['#012a4a','#0184a0','#90e0ef'],['#3c096c','#ff6d00','#ffecd1']
-  ];
+  /* ---- kreatywne generowanie unikalnej flagi SVG ---- */
   let rebFlagSeq=0;
+  const rnd=a=>a[Math.floor(Math.random()*a.length)];
+  const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+  const hex=(h,s,l)=>{s/=100;l/=100;const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));const t=x=>Math.round(255*f(x)).toString(16).padStart(2,'0');return'#'+t(0)+t(8)+t(4)};
   function makeRebelFlag(){
-   const key='REBFLG_'+(++rebFlagSeq)+'_'+Date.now().toString(36);
-   const pal=REB_PAL[Math.floor(Math.random()*REB_PAL.length)];
-   const pat=REB_PATTERNS[Math.floor(Math.random()*REB_PATTERNS.length)];
-   const svg=pat(pal[0],pal[1],pal[2]);
+   const key='REBFLG_'+(++rebFlagSeq)+'_'+Date.now().toString(36)+ri(10,99);
+   /* harmonia kolorów: wspólna baza odcienia + kontrasty */
+   const base=ri(0,359);
+   const modes=['triad','split','complement','analog','clash'];
+   const mode=rnd(modes);
+   let h2=base,h3=base;
+   if(mode==='triad'){h2=(base+120)%360;h3=(base+240)%360}
+   else if(mode==='split'){h2=(base+150)%360;h3=(base+210)%360}
+   else if(mode==='complement'){h2=(base+180)%360;h3=(base+40)%360}
+   else if(mode==='analog'){h2=(base+25)%360;h3=(base+340)%360}
+   else {h2=(base+90)%360;h3=(base+200)%360}
+   const c1=hex(base,ri(55,85),ri(18,38));
+   const c2=hex(h2,ri(60,90),ri(40,62));
+   const c3=hex(h3,ri(50,80),ri(70,92));
+   const c4=hex((base+ri(10,50))%360,ri(40,70),ri(25,55));
+   const star=(cx,cy,r,n,fill)=>{
+    let pts=[];
+    for(let i=0;i<n*2;i++){const ang=-Math.PI/2+i*Math.PI/n,rr=i%2?r*.42:r;pts.push((cx+Math.cos(ang)*rr).toFixed(2)+','+(cy+Math.sin(ang)*rr).toFixed(2))}
+    return `<polygon points="${pts.join(' ')}" fill="${fill}"/>`;
+   };
+   const crescent=(cx,cy,r,fill,bg)=>`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}"/><circle cx="${(cx+r*0.35).toFixed(1)}" cy="${cy}" r="${(r*0.78).toFixed(1)}" fill="${bg}"/>`;
+   const builders=[
+    /* 3 pasy poziome + gwiazda */
+    ()=>`<rect width="30" height="6" fill="${c1}"/><rect y="6" width="30" height="6" fill="${c2}"/><rect y="12" width="30" height="6" fill="${c3}"/>${star(15,9,3.2,5,c3)}`,
+    /* 3 pasy pionowe + koło */
+    ()=>`<rect width="10" height="18" fill="${c1}"/><rect x="10" width="10" height="18" fill="${c2}"/><rect x="20" width="10" height="18" fill="${c3}"/><circle cx="15" cy="9" r="3" fill="${c1}"/>`,
+    /* trójkąt + pole */
+    ()=>`<rect width="30" height="18" fill="${c1}"/><polygon points="0,0 16,9 0,18" fill="${c2}"/>${star(22,9,3.5,5,c3)}`,
+    /* krzyż nordycki */
+    ()=>`<rect width="30" height="18" fill="${c1}"/><rect y="7" width="30" height="4" fill="${c2}"/><rect x="10" width="4" height="18" fill="${c2}"/><rect y="8" width="30" height="2" fill="${c3}"/><rect x="11" width="2" height="18" fill="${c3}"/>`,
+    /* półksiężyc i gwiazda */
+    ()=>`<rect width="30" height="18" fill="${c1}"/>${crescent(11,9,5.2,c2,c1)}${star(20,9,3.4,5,c3)}`,
+    /* ukośne pasy */
+    ()=>{let s=`<rect width="30" height="18" fill="${c1}"/>`;for(let i=-2;i<8;i++){const x=i*6;s+=`<polygon points="${x},0 ${x+4},0 ${x+14},18 ${x+10},18" fill="${i%2?c2:c3}" opacity=".95"/>`}return s},
+    /* kanton + gwiazdy */
+    ()=>{let s=`<rect width="30" height="18" fill="${c1}"/><rect width="14" height="10" fill="${c2}"/>`;for(const[x,y]of[[3.5,3],[7,3],[10.5,3],[5.2,6.5],[8.8,6.5]])s+=star(x,y,1.35,5,c3);return s},
+    /* romb centralny */
+    ()=>`<rect width="30" height="18" fill="${c1}"/><polygon points="15,1 28,9 15,17 2,9" fill="${c2}"/><polygon points="15,4 23,9 15,14 7,9" fill="${c3}"/>`,
+    /* fale / 3 łuki */
+    ()=>`<rect width="30" height="18" fill="${c1}"/><path d="M0 12 Q7.5 6 15 12 T30 12 V18 H0 Z" fill="${c2}"/><path d="M0 15 Q7.5 11 15 15 T30 15 V18 H0 Z" fill="${c3}"/>`,
+    /* tarcza */
+    ()=>`<rect width="30" height="18" fill="${c1}"/><path d="M15 2 L24 5 L24 11 Q24 15 15 17 Q6 15 6 11 L6 5 Z" fill="${c2}" stroke="${c3}" stroke-width="0.8"/>${star(15,9,2.8,5,c3)}`,
+    /* szachownica 6x4 */
+    ()=>{let s='';for(let y=0;y<4;y++)for(let x=0;x<6;x++)s+=`<rect x="${x*5}" y="${y*4.5}" width="5" height="4.5" fill="${(x+y)%2?c1:c2}"/>`;s+=star(15,9,3,5,c3);return s},
+    /* słońce wschodzące */
+    ()=>{let rays='';for(let i=0;i<12;i++){const a=i*Math.PI/6;rays+=`<line x1="15" y1="11" x2="${(15+Math.cos(a)*9).toFixed(1)}" y2="${(11+Math.sin(a)*7).toFixed(1)}" stroke="${c3}" stroke-width="1.2"/>` }return `<rect width="30" height="18" fill="${c1}"/><rect y="12" width="30" height="6" fill="${c2}"/>${rays}<circle cx="15" cy="11" r="3.2" fill="${c3}"/>`},
+    /* trójkąty w dół */
+    ()=>`<rect width="30" height="18" fill="${c1}"/><polygon points="0,0 10,0 5,18" fill="${c2}"/><polygon points="10,0 20,0 15,18" fill="${c3}"/><polygon points="20,0 30,0 25,18" fill="${c2}"/>`,
+    /* pierścienie */
+    ()=>`<rect width="30" height="18" fill="${c1}"/><circle cx="15" cy="9" r="7" fill="none" stroke="${c2}" stroke-width="2.2"/><circle cx="15" cy="9" r="4" fill="none" stroke="${c3}" stroke-width="1.8"/><circle cx="15" cy="9" r="1.6" fill="${c2}"/>`,
+    /* ukośny podział + emblemat */
+    ()=>`<rect width="30" height="18" fill="${c1}"/><polygon points="0,18 30,0 30,18" fill="${c2}"/>${star(10,6,3.2,6,c3)}${star(22,13,2.6,5,c1)}`,
+    /* pasek + herb kółko */
+    ()=>`<rect width="30" height="18" fill="${c1}"/><rect y="5" width="30" height="8" fill="${c2}"/><circle cx="15" cy="9" r="3.6" fill="${c3}"/><circle cx="15" cy="9" r="2" fill="${c1}"/>`
+   ];
+   const body=rnd(builders)();
+   const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 18">${body}</svg>`;
    if(typeof D!=='undefined'&&D.F)D.F[key]=svg;
    if(typeof flagCache!=='undefined')delete flagCache[key];
-   return {key,pal,rgb:pal.map(h=>{const m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h);return m?[parseInt(m[1],16),parseInt(m[2],16),parseInt(m[3],16)]:[120,40,40]})};
+   const parse=h=>{const m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h);return m?[parseInt(m[1],16),parseInt(m[2],16),parseInt(m[3],16)]:[120,40,40]};
+   return {key,pal:[c1,c2,c3],rgb:[parse(c1),parse(c2),parse(c3)]};
   }
   const REB_NAMES=['Wolna Republika','Nowa Federacja','Związek Prowincji','Republika Odrodzenia','Wolne Ziemie','Federacja Ludowa','Związek Wolności','Kanton Wolny','Republika Ludowa','Państwo Powstańcze'];
 
@@ -4542,37 +4600,75 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
    if(c.a&&c.a<=9000&&c.ps.length<=2)return true;
    return false;
   }
-  /* po narysowaniu mapy: dla mikro-państw zamaluj jednolitym kolorem bez „kawałków” */
+  /* WYŁĄCZONE: redraw mikro-państw robił ciemne „kółka” */
   const prevDraw=draw;
-  draw=function(){
-   prevDraw();
-   try{
-    if(G&&G.pc)return; /* peace mode ma własną warstwę */
-    const s=V.s;
-    if(s<0.8)return;
-    cx.save();
-    cx.setTransform(dpr*s,0,0,dpr*s,dpr*V.tx,dpr*V.ty);
-    const l=-V.tx/s,r=(W-V.tx)/s,t=-V.ty/s,b=(H-V.ty)/s;
-    const vis=q=>!(q[2]<l||q[0]>r||q[3]<t||q[1]>b);
-    for(const c of C){
-     if(!isTinyCountry(c))continue;
-     for(const p of c.ps){
-      if(!p.path||!p.bb||!vis(p.bb))continue;
-      /* jednolite wypełnienie + gruby zewnętrzny kontur – bez wrażenia wielu prowincji */
-      const col=p.col||(c.owner?c.owner.color:`hsl(${c.h|0},${c.s|40}%,${c.l|40}%)`);
-      cx.fillStyle=col;
-      cx.fill(p.path,'evenodd');
-      cx.lineWidth=Math.max(1.2,2.2/s);
-      cx.strokeStyle=c.owner?'rgba(255,255,255,.95)':'rgba(20,30,50,.85)';
-      cx.stroke(p.path);
-     }
-   }
-    cx.restore();
-   }catch(e){console.warn('SW micro unify',e)}
-  };
+  // draw unchanged
 
   console.info('[SW] rebel flags + combat + micro unify loaded');
  }catch(e){console.warn('SW rebel/micro',e)}
+})();
+</script>
+
+<script>
+
+
+<script>
+/* SUPER WARS – mikro: ZERO kółek przy przybliżeniu; z daleka tylko mała kropka w kolorze kraju */
+(()=>{
+ try{
+  const colOf=c=>{
+   if(!c)return '#5a8fbf';
+   if(c.owner&&c.owner.color)return c.owner.color;
+   const p=c.ps&&c.ps[0];
+   if(p&&p.col0)return p.col0;
+   if(p&&p.col)return p.col;
+   return `hsl(${(c.h|0)},65%,48%)`;
+  };
+  const tiny=c=>{
+   if(!c||!c.ps||!c.ps.length)return false;
+   if(c.a&&c.a<=12000)return true;
+   return /Liechtenstein|Monako|San Marino|Andor|Watyk|Luksemburg|Luxembourg|Malta|Kosow|Singapore|Singapur|Bahrain|Bahrajn|Maldives|Malediwy|Barbados|Grenada|Dominika|Palau|Nauru|Tuvalu|Seychell|Seszele|Tonga|Samoa|Kiribati|Vanuatu|Micronesia|Mikronezja/i.test(c.n||'');
+  };
+  /* isMicro tylko dla logiki hitboxów – nie rysuje samo z siebie */
+  window.isMicro=function(c){return tiny(c)};
+  window.microHit=function(px,py){
+   const s=(V&&V.s)||1;
+   if(s>=1.5)return null; /* przy przybliżeniu nie potrzeba sztucznego hitboxa */
+   for(const c of C){
+    if(!tiny(c)||!c.ps.length)continue;
+    const p=c.ps[0];if(!p||!p.bb)continue;
+    if((p.bb[2]-p.bb[0])*s>12)continue;
+    const m=mid(p);
+    const x=m[0]*s+V.tx,y=m[1]*s+V.ty;
+    if(Math.hypot(x-px,y-py)<14)return p;
+   }
+   return null;
+  };
+  const prevOver=drawOver;
+  drawOver=function(s,T){
+   prevOver(s,T);
+   try{
+    /* TWARDA REGUŁA: przy zoom >= 1.5 NIE MA żadnych kółek */
+    if(!(s<1.5))return;
+    const g=OX;
+    g.setTransform(typeof dpr==='number'?dpr:1,0,0,typeof dpr==='number'?dpr:1,0,0);
+    for(const c of C){
+     if(!tiny(c)||!c.ps.length)continue;
+     const p=c.ps[0];if(!p||!p.bb)continue;
+     /* prowincja już wystarczająco duża na ekranie → nic nie rysuj */
+     if((p.bb[2]-p.bb[0])*s>8)continue;
+     const m=mid(p);
+     const x=m[0]*s+V.tx,y=m[1]*s+V.ty;
+     if(x<-20||y<-20||x>W+20||y>H+20)continue;
+     const col=colOf(c);
+     const R=2.8; /* zawsze małe */
+     g.beginPath();g.arc(x,y,R,0,Math.PI*2);
+     g.fillStyle=col;g.fill();
+     g.lineWidth=1;g.strokeStyle='#ffffff';g.stroke();
+    }
+   }catch(e){}
+  };
+ }catch(e){console.warn('SW micro strict',e)}
 })();
 </script>
 </html>
