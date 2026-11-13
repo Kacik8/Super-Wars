@@ -1043,7 +1043,7 @@ function drawOver(s,T){const cx=OX;cx.setTransform(dpr,0,0,dpr,0,0);cx.clearRect
  for(const c of C)for(const u of c.units||[]){if(!u.dest||u.dest===u.p)continue;const a=mid(u.p),b=mid(u.dest),x1=X(a[0]),y1=Y(a[1]),x2=X(b[0]),y2=Y(b[1]);if(!inb(x1,y1)&&!inb(x2,y2))continue;
   const ang=Math.atan2(y2-y1,x2-x1),len=Math.hypot(x2-x1,y2-y1);if(len<8)continue;
   cx.save();cx.globalAlpha=.9;cx.strokeStyle=c.owner?c.owner.color:ccol(c);cx.fillStyle=c.owner?c.owner.color:ccol(c);cx.lineWidth=3;cx.setLineDash([8,6]);cx.beginPath();cx.moveTo(x1,y1);cx.lineTo(x2,y2);cx.stroke();cx.setLineDash([]);cx.translate(x2,y2);cx.rotate(ang);cx.beginPath();cx.moveTo(0,0);cx.lineTo(-11,-6);cx.lineTo(-11,6);cx.closePath();cx.fill();cx.restore()}
- for(const c of C){if(!c.units||!c.units.length)continue;if(!(c.owner||(sel&&sel.c===c)||(c.fit[2]-c.fit[0])*s>140))continue;
+ for(const c of C){if(!c.units||!c.units.length)continue;if(true)continue;/* SW: etykiety oddziałów tylko z FIX6 (z flagą) */if(!(c.owner||(sel&&sel.c===c)||(c.fit[2]-c.fit[0])*s>140))continue;
   const gr=new Map(),movingByP=new Map(),moveNow=performance.now();for(const u of c.units){const g=gr.get(u.p)||{n:0,pw:0};g.n+=u.n;g.pw+=u.n*(1+u.lv/4);gr.set(u.p,g);if(u.p&&u.from&&u.moveAt&&moveNow-u.moveAt<1050){let a=movingByP.get(u.p);if(!a)movingByP.set(u.p,a=[]);a.push(u)}}
   for(const[p,g]of gr){
    let m=mid(p);
@@ -1190,7 +1190,14 @@ function aiPeaceOk(a,b,take,give,extra){
  const occByB=sm(a.ps.filter(q=>q.occ===b)); /* b zajął u a */
  /* Siła militarna */
  const mil=clamp(Math.log2((power(a)+100)/(power(b)+100)),-3,3);
- const dur=clamp(G.turn-(G.wsince[DK(a,b)]||G.turn),0,8);
+ const warDur=G.turn-(G.wsince[DK(a,b)]||G.turn);
+ const dur=clamp(warDur,0,8);
+ /* Czysty biały pokój (nic nie zmienia granic): AI prawie nigdy nie akceptuje, gdy ma przewagę lub wojna jest krótka */
+ if(net===0&&!(extra&&(extra.vassal||extra.tribute))&&takePts===0&&givePts===0){
+  if(mil>=0&&warDur<40)return false; /* AI silniejsze/równe – walczy dalej */
+  if(warDur<25)return false;
+  if(Math.random()>.3)return false;
+ }
  /* b może oddać maksymalnie: to co a zajął + bonus za słabość militarną + czas trwania */
  const totB=totalPts(b)||1,lostB=occByA/totB;
  const keep=clamp(1+mil/2.5,0,1.6); /* silniejszy b nie oddaje zajętych prowincji bez walki */
@@ -1232,12 +1239,7 @@ function renderPbar(){const P=G.pc;if(!P){PB.style.display='none';return}
  <div class="pr"><button data-p="occ" title="Każdy zabiera to, co ma zajęte">Wg okupacji</button><button data-p="white" title="Biały pokój">Biały pokój</button><button data-p="clr">Wyczyść</button><button class="btn" data-p="send">Wyślij${P.counter?'':' · 💬 '+DIP.peace.tp}</button><button data-p="x">Anuluj</button></div>`
  document.getElementById('pvas').onchange=e=>{P.extra.vassal=e.target.checked;renderPbar()};
  document.getElementById('ptrib').onchange=e=>{P.extra.tribute=e.target.checked;renderPbar()}}
-PB.onclick=e=>{const x=e.target.closest('button'),P=G.pc;if(!x||!P)return;const k=x.dataset.p;
- if(k=='occ'){P.take=new Set(P.b.ps.filter(q=>q.occ===P.a));P.give=new Set(P.a.ps.filter(q=>q.occ===P.b))}
- else if(k=='white'||k=='clr'){P.take=new Set();P.give=new Set()}
- else if(k=='x'){G.pc=null}
- else if(k=='send'){sendPeace();return}
- renderPbar();draw()};
+PB.onclick=null; /* handlery przycisków pokoju w SW peace UI (koniec pliku) */
 function peaceClick(p){const P=G.pc;if(!P||!p||p.t!='p')return;
  const tg=st=>{st.has(p)?st.delete(p):st.add(p)};
  if(p.c===P.b)tg(P.take);else if(p.c===P.a)tg(P.give);else{toast('Wybierz prowincję jednego z dwóch państw');return}
@@ -1254,9 +1256,30 @@ function sendPeace(){const P=G.pc;if(!P)return;const{a,b}=P,take=[...P.take],giv
 MODAL.addEventListener('click',e=>{if(!e.target.closest('#ocnt')||!G.po)return;const o=G.po;G.offers=G.offers.filter(x=>x!==o);G.po=null;MODAL.classList.add('hide');startPeace(o.to,o.from,true)});
 
 /* ---- sztuczna inteligencja: wojny i pokoje państw sterowanych przez system ---- */
+/* Granica lądowa LUB morska (wspólny akwen przybrzeżny). Bez tego AI praktycznie nigdy nie wypowiada wojny. */
+function bordersLandOrSea(a,b){
+ if(!a||!b||a===b)return false;
+ if(a.nb&&a.nb.has&&a.nb.has(b))return true; /* ląd */
+ /* morze: obie kraje mają prowincję przy tym samym akwenie */
+ const seasOf=c=>{
+  const s=new Set();
+  for(const p of c.ps||[]){
+   if(!p||!p.bb)continue;
+   for(const sea of SV){
+    if(!sea||!sea.bb)continue;
+    if(adj(p,sea))s.add(sea);
+   }
+  }
+  return s;
+ };
+ const sa=seasOf(a),sb=seasOf(b);
+ for(const sea of sa)if(sb.has(sea))return true;
+ return false;
+}
 function botWar(){
  const ag=clamp((G.aggression||2)*4,.5,12);if(G.turn>=3&&Object.keys(G.war).length<Math.min(80,Math.round(10*ag)))for(const a of C){if(a.owner||a.reb||!a.ps.length||!a.units.length||Math.random()>(Math.min(.10,.012*ag)))continue;
-  const close=(b)=>{if(a.nb&&a.nb.has&&a.nb.has(b))return true;const A=a.fit||[],B=b.fit||[];if(A.length<4||B.length<4)return false;const dx=Math.max(0,A[0]-B[2],B[0]-A[2]),dy=Math.max(0,A[1]-B[3],B[1]-A[3]);return Math.hypot(dx*Math.cos(((A[1]+A[3]+B[1]+B[3])/4)*Math.PI/180),dy)<=4.5};
+  /* Tylko kraje z prawdziwą granicą lądową lub morską – zero wojen „przez cały kontynent” */
+  const close=b=>bordersLandOrSea(a,b);
   const cand=C.filter(b=>b!==a&&b.ps.length&&!b.reb&&close(b)&&!G.war[DK(a,b)]&&!isAl(a,b)&&(G.truce[DK(a,b)]||0)<=G.turn&&relG(a,b)<Math.min(12,-35+5.25*ag)&&power(a)>power(b)*Math.max(.72,1.12-(ag-1)*.055));
   if(!cand.length)continue;
   const scored=cand.map(b=>({b,score:(power(a)/Math.max(1,power(b)))*10+b.ps.reduce((n,q)=>n+borderScore(a,q),0)*4+(a.nb&&a.nb.has&&a.nb.has(b)?18:0)+Math.max(0,-relG(a,b))*.12-(b.ps.length>8?3:0)+Math.random()*5})).sort((x,y)=>y.score-x.score);
@@ -1274,18 +1297,43 @@ function botPeace(){const cs=C.filter(c=>c.ps.length&&!c.reb);
  for(let i=0;i<cs.length;i++)for(let j=i+1;j<cs.length;j++){const a=cs[i],b=cs[j],k=DK(a,b);if(!G.war[k]||(a.owner&&b.owner))continue;
   const dur=G.turn-(G.wsince[k]||G.turn),tot=isTotal(a,b)?a:isTotal(b,a)?b:null;
   if(tot&&!tot.owner&&dur>=6&&Math.random()<.72){const l=tot===a?b:a;applyPeace(tot,l,l.ps.filter(q=>q.occ===tot),[]);continue}
-  /* AI nie kończy wojny po kilku turach białym pokojem: najpierw musi potrwać, a potem zwykle przynieść realne zdobycze. */
-  if(dur<10||Math.random()>.12)continue;
+  /* Pokój może przyjść szybko, ALE AI liczy: czy stać nas finansowo i militarnie na wygraną? */
+  if(dur<6||Math.random()>.18)continue;
   const bot=a.owner?b:a,oth=bot===a?b:a;
   const occByBot=oth.ps.filter(q=>q.occ===bot);
   const occByOth=bot.ps.filter(q=>q.occ===oth);
-  if(!occByBot.length&&!occByOth.length&&dur<30)continue;
-  /* Poddaje się tylko przegrywający: traci >=50% wartości kraju albo jest >3x słabszy. Silniejszy walczy dalej. */
-  const myPow=power(bot),thPow=power(oth),lostPts=occByOth.reduce((t,q)=>t+pScore(q),0),totPts=totalPts(bot)||1;
-  const desperate=lostPts/totPts>=.5||(lostPts>0&&thPow>myPow*3);
-  if(!desperate&&myPow>=thPow*.8&&dur<30)continue;
+  const myPow=power(bot),thPow=power(oth)||1;
+  const lostPts=occByOth.reduce((t,q)=>t+pScore(q),0),totPts=totalPts(bot)||1;
+  const hasGains=occByBot.length>0;
+  const whiteOnly=!hasGains&&!occByOth.length;
+  const myInc=typeof income==='function'?income(bot):0;
+  const thInc=typeof income==='function'?income(oth):0;
+  const myMoney=bot.money||0,thMoney=oth.money||0;
+  const myRunway=myInc>0?myMoney/Math.max(1,myInc):0;
+  const thRunway=thInc>0?thMoney/Math.max(1,thInc):0;
+  /* canAffordWin = realna szansa wyczerpać przeciwnika i wygrać */
+  const milLead=myPow>=thPow*1.15;
+  const milEven=myPow>=thPow*0.85;
+  const moneyLead=myMoney+myInc*4>=(thMoney+thInc*4)*1.2;
+  const canAffordWin=(milLead&&(moneyLead||myRunway>=thRunway*0.7))||(milEven&&moneyLead&&myRunway>=8)||(myPow>thPow*1.4);
+  const desperate=lostPts/totPts>=.35||(lostPts>0&&thPow>myPow*2)||(thPow>myPow*3)||(myMoney<myInc*1.5&&thPow>myPow*1.1);
+  /* Stać nas na wojnę → nie bierz szybkiego białego pokoju */
+  if(canAffordWin&&!desperate){
+   if(whiteOnly)continue;
+   if(!hasGains&&dur<20)continue;
+  }
+  /* Szybki pokój OK gdy przegrywamy / biedni / mamy zdobycze do utrwalenia */
+  if(whiteOnly){
+   if(canAffordWin)continue;
+   if(dur<10&&!desperate)continue;
+   if(Math.random()>.4)continue;
+  }else{
+   if(!desperate&&!hasGains&&canAffordWin&&dur<16)continue;
+   if(!desperate&&myPow>=thPow*0.9&&!hasGains&&canAffordWin)continue;
+  }
   const take=niceProvs(bot,oth,occByBot);
   const give=desperate?niceProvs(oth,bot,occByOth):[];
+  if(oth.owner&&whiteOnly&&canAffordWin)continue;
   if(oth.owner){if(!G.offers.some(x=>x.type=='peace'&&((x.from===bot&&x.to===oth)||(x.from===oth&&x.to===bot))))G.offers.push({from:bot,to:oth,type:'peace',take,give,extra:{}})}
   else if(aiPeaceOk(bot,oth,take,give,{}))applyPeace(bot,oth,take,give,{})}}
 
@@ -3837,8 +3885,8 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
   const prevOver=drawOver;
   drawOver=function(s,T){
    prevOver(s,T);
-   /* podczas panningu nie rysuj ciężkich odznak, ale nie gub jednostek na stałe */
-   if(window.__swPan)return;
+   /* Zawsze rysuj armie przy zoomie – nie chowaj nawet podczas panningu/zoomu */
+   // if(window.__swPan)return;  // WYŁĄCZONE – armie muszą być widoczne przy przybliżeniu
    try{
     const g=OX;
     /* upewnij się, że rysujemy w przestrzeni ekranu */
@@ -3880,8 +3928,8 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
       }catch(_){}
      }
     }
-    /* --- Armie lądowe: od zoomu 0.35, zawsze gracz + zaznaczony + sąsiedzi w wojnie --- */
-    if(s>=0.35){
+    /* --- Armie lądowe: zawsze z flagą (gracz + zaznaczony + wojna + duże kraje) --- */
+    {
      const me=G.players&&G.players[G.cur]&&G.players[G.cur].c;
      const selectedC=sel&&(sel.t==='p'?sel.c:(sel.t==='c'?sel:null));
      for(const c of C){
@@ -3890,9 +3938,11 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
       const isMe=!!c.owner||c===me;
       const isSel=selectedC&&(c===selectedC);
       const atWar=me&&G.war&&G.war[typeof DK==='function'?DK(me,c):(me.n+'|'+c.n)];
-      const large=fit&&((fit[2]-fit[0])*s>80||(fit[3]-fit[1])*s>80);
-      if(!(isMe||isSel||atWar||large||s>=2.5))continue;
-      if(fit&&(fit[2]*s+V.tx<-60||fit[0]*s+V.tx>W+60||fit[3]*s+V.ty<-60||fit[1]*s+V.ty>H+60))continue;
+      const large=fit&&((fit[2]-fit[0])*s>40||(fit[3]-fit[1])*s>40);
+      // Zawsze pokazuj własne armie + przy zoomie (s>=1.2) prawie wszystko
+      if(!(isMe||isSel||atWar||large||s>=1.2))continue;
+      // Przy wysokim zoomie nie culluj całego kraju – tylko poszczególne prowincje
+      if(s < 3 && fit&&(fit[2]*s+V.tx<-60||fit[0]*s+V.tx>W+60||fit[3]*s+V.ty<-60||fit[1]*s+V.ty>H+60))continue;
       const gr=new Map(),movingByP=new Map(),moveNow=performance.now();
       for(const u of c.units){
        if(!u.p||u.p.t==='s')continue;
@@ -4038,8 +4088,8 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
    addEventListener('pointerup',()=>setTimeout(()=>{clear();window.__swNeedFrame=1},80),{passive:true});
    addEventListener('pointercancel',clear,{passive:true});
   }
-  /* auto-clear if stuck */
-  setInterval(()=>{if(window.__swPan&&performance.now()-panT>500)window.__swPan=0},400);
+  /* auto-clear if stuck – krócej, żeby armie nie znikały przy zoomie */
+  setInterval(()=>{if(window.__swPan&&performance.now()-panT>220)window.__swPan=0},120);
  }catch(e){console.warn('SW pan',e)}
 })();
 </script>
@@ -4131,4 +4181,195 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
 })();
 </script>
 
+
+<style id="sw-peace-ui">
+#pbar.sw-peace-side{
+  display:none;position:absolute;z-index:20;top:12px;right:12px;left:auto;transform:none;
+  width:min(340px,calc(100vw - 24px));max-height:calc(100% - 24px);overflow:auto;
+  padding:14px 14px 12px;border-radius:14px;
+  background:linear-gradient(160deg,rgba(12,22,48,.96),rgba(28,18,55,.96));
+  color:#eaf0ff;border:1px solid rgba(150,180,255,.4);
+  box-shadow:0 16px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08);
+  font:600 13px Poppins,system-ui,sans-serif;line-height:1.4;
+}
+#pbar.sw-peace-side .pl{margin:8px 0}
+#pbar.sw-peace-side .ok{color:#7dffa0;font-weight:800}
+#pbar.sw-peace-side .pr{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+#pbar.sw-peace-side button{padding:7px 10px;font-size:12px;font-weight:800;border-radius:9px;border:1px solid rgba(255,255,255,.2);background:linear-gradient(145deg,#203d70,#30265f);color:#fff;cursor:pointer}
+#pbar.sw-peace-side .btn{background:linear-gradient(135deg,#3b82f6,#7c3aed)!important}
+#pbar.sw-peace-side .chance{margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.07);border:1px solid rgba(150,180,255,.25)}
+#pbar.sw-peace-side .chance b{font-size:18px}
+#pbar.sw-peace-side .bar{height:8px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:6px}
+#pbar.sw-peace-side .bar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#ef4444,#f59e0b,#22c55e)}
+#pbar.sw-peace-side label{display:flex;align-items:center;gap:8px;padding:8px 10px;margin:6px 0;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(150,180,255,.2);cursor:pointer}
+#pbar.sw-peace-side .legend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;margin:8px 0}
+#pbar.sw-peace-side .legend span{display:inline-flex;align-items:center;gap:5px}
+#pbar.sw-peace-side .dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+@media(max-width:700px){
+  #pbar.sw-peace-side{top:auto;bottom:10px;right:8px;left:8px;width:auto;max-height:42vh}
+}
+</style>
+<script>
+/* SUPER WARS – rozmowy pokojowe: przyciemnienie mapy, kolory stron, panel boczny, szansa sukcesu */
+(()=>{
+ try{
+  const PB=document.getElementById('pbar');
+  if(PB)PB.classList.add('sw-peace-side');
+
+  function peaceChance(P){
+   if(!P)return {pct:0,label:'—'};
+   if(typeof isTotal==='function'&&isTotal(P.a,P.b))return {pct:100,label:'Pewne (cała okupacja)'};
+   if(P.b&&P.b.owner)return {pct:null,label:'Czeka na decyzję gracza'};
+   const take=[...P.take],give=[...P.give],extra=P.extra||{};
+   if(typeof aiPeaceOk!=='function')return {pct:50,label:'Nieznana'};
+   /* Monte Carlo: aiPeaceOk ma losowość – szacujemy szansę */
+   let ok=0,n=24;
+   for(let i=0;i<n;i++)if(aiPeaceOk(P.a,P.b,take,give,extra))ok++;
+   const pct=Math.round(100*ok/n);
+   let label='Niska';
+   if(pct>=75)label='Wysoka';
+   else if(pct>=45)label='Średnia';
+   else if(pct>=20)label='Niska';
+   else label='Bardzo niska';
+   return {pct,label};
+  }
+
+  const oldRender=typeof renderPbar==='function'?renderPbar:null;
+  window.renderPbar=function(){
+   const P=G.pc;
+   if(!P){if(PB){PB.style.display='none';PB.innerHTML=''}return}
+   if(!P.extra)P.extra={};
+   const nm=st=>[...st].map(q=>esc(q.n)+' ('+pScore(q)+'⭐)').join(', ')||'—';
+   const smS=st=>[...st].reduce((s,q)=>s+pScore(q),0);
+   const takePts=smS(P.take),givePts=smS(P.give),netPts=takePts-givePts;
+   const tPts=totalPts(P.b)||1;
+   const vassalCost=Math.ceil(tPts/3),tributeCost=Math.ceil(tPts/10);
+   const tot=typeof isTotal==='function'&&isTotal(P.a,P.b);
+   const ch=peaceChance(P);
+   const barW=ch.pct==null?0:ch.pct;
+   const attName=esc(P.a.n),defName=esc(P.b.n);
+   PB.style.display='block';
+   PB.innerHTML=`<b style="font-size:15px">🕊️ Rozmowy pokojowe</b>
+ <div class="legend">
+  <span><i class="dot" style="background:#ef4444"></i> ${attName} (strona A)</span>
+  <span><i class="dot" style="background:#3b82f6"></i> ${defName} (strona B)</span>
+ </div>
+ <div class="pl" style="opacity:.9;font-size:12.5px">Kliknij <b style="color:#93c5fd">niebieską</b> prowincję → zabierasz ją (nowa granica).<br>
+ Kliknij <b style="color:#fca5a5">czerwoną</b> → oddajesz ją.<br>
+ Klik ponownie = cofnij. Inne kraje są przyciemnione.</div>
+ <div class="pl">✅ Zabieram <b>${takePts}⭐</b>: ${nm(P.take)}<br>
+ ❌ Oddaję <b>${givePts}⭐</b>: ${nm(P.give)}<br>
+ <b>Bilans: ${netPts>0?'+':''}${netPts}⭐</b></div>
+ <label><input type="checkbox" id="pvas" ${P.extra.vassal?'checked':''}> 👑 Wasalizacja <small>(${vassalCost}⭐ ekwiw.)</small></label>
+ <label><input type="checkbox" id="ptrib" ${P.extra.tribute?'checked':''}> 💸 Danina wojenna <small>(${tributeCost}⭐ ekwiw.)</small></label>
+ <div class="chance">Szansa przyjęcia: <b style="color:${barW>=75?'#86efac':barW>=45?'#fde68a':barW>=20?'#fdba74':'#fca5a5'}">${ch.pct==null?'—':ch.pct+'%'}</b> · ${ch.label}
+  <div class="bar"><i style="width:${barW}%"></i></div>
+  <div style="margin-top:6px;font-size:11.5px;opacity:.75">${tot?'Cała okupacja – warunki pewne.':'AI ocenia siłę, skarb i okupację.'}</div>
+ </div>
+ <div class="pr">
+  <button data-p="occ" title="Wg okupacji">Wg okupacji</button>
+  <button data-p="white">Biały pokój</button>
+  <button data-p="clr">Wyczyść</button>
+  <button class="btn" data-p="send">Wyślij${P.counter?'':' · 💬 '+(typeof DIP!=='undefined'&&DIP.peace?DIP.peace.tp:'?')}</button>
+  <button data-p="x">Anuluj</button>
+ </div>`;
+   const pv=document.getElementById('pvas'),pt=document.getElementById('ptrib');
+   if(pv)pv.onchange=e=>{P.extra.vassal=e.target.checked;renderPbar();draw()};
+   if(pt)pt.onchange=e=>{P.extra.tribute=e.target.checked;renderPbar();draw()};
+  };
+
+  /* zachowaj stare handlery klików paska jeśli były */
+  if(PB&&!PB._swPeaceBound){
+   PB._swPeaceBound=1;
+   PB.addEventListener('click',e=>{
+    const x=e.target.closest('button[data-p]'),P=G.pc;if(!x||!P)return;
+    const k=x.dataset.p;
+    if(k==='occ'){P.take=new Set(P.b.ps.filter(q=>q.occ===P.a));P.give=new Set(P.a.ps.filter(q=>q.occ===P.b))}
+    else if(k==='white'||k==='clr'){P.take=new Set();P.give=new Set();if(P.extra){P.extra.vassal=false;P.extra.tribute=false}}
+    else if(k==='x'){G.pc=null}
+    else if(k==='send'){if(typeof sendPeace==='function')sendPeace();return}
+    renderPbar();draw();
+   });
+  }
+
+  const oldPeaceClick=typeof peaceClick==='function'?peaceClick:null;
+  window.peaceClick=function(p){
+   const P=G.pc;if(!P||!p||p.t!=='p')return;
+   const tg=st=>{st.has(p)?st.delete(p):st.add(p)};
+   if(p.c===P.b)tg(P.take);
+   else if(p.c===P.a)tg(P.give);
+   else{toast('Wybierz prowincję jednego z dwóch walczących państw');return}
+   renderPbar();draw();
+  };
+
+  /* Warstwa mapy: przyciemnij resztę, czerwony/niebieski dla stron, zaznaczenia granic */
+  const prevDraw=draw;
+  draw=function(){
+   prevDraw();
+   try{
+    const P=G.pc;if(!P||!P.a||!P.b)return;
+    const s=V.s;
+    cx.save();
+    cx.setTransform(dpr*s,0,0,dpr*s,dpr*V.tx,dpr*V.ty);
+    const l=-V.tx/s,r=(W-V.tx)/s,t=-V.ty/s,b=(H-V.ty)/s;
+    const vis=q=>!(q[2]<l||q[0]>r||q[3]<t||q[1]>b);
+    /* przyciemnienie innych krajów */
+    for(const p of PV){
+     if(!vis(p.bb)||!p.path)continue;
+     if(p.c===P.a||p.c===P.b)continue;
+     cx.fillStyle='rgba(6,10,22,.62)';
+     cx.fill(p.path,'evenodd');
+    }
+    /* strona A (atakująca / proponująca) – czerwona poświata */
+    for(const p of P.a.ps||[]){
+     if(!vis(p.bb)||!p.path)continue;
+     if(P.give&&P.give.has(p))continue;
+     cx.fillStyle='rgba(220,50,50,.28)';
+     cx.fill(p.path,'evenodd');
+     cx.lineWidth=1.4/s;cx.strokeStyle='rgba(255,120,120,.75)';
+     cx.stroke(p.path);
+    }
+    /* strona B (broniąca) – niebieska */
+    for(const p of P.b.ps||[]){
+     if(!vis(p.bb)||!p.path)continue;
+     if(P.take&&P.take.has(p))continue;
+     cx.fillStyle='rgba(40,100,220,.28)';
+     cx.fill(p.path,'evenodd');
+     cx.lineWidth=1.4/s;cx.strokeStyle='rgba(120,180,255,.8)';
+     cx.stroke(p.path);
+    }
+    /* zabierane (z B do A) – jasnozielone / „nowa granica dla A” */
+    if(P.take)for(const q of P.take){
+     if(!q.path||!vis(q.bb))continue;
+     cx.fillStyle='rgba(40,200,90,.55)';
+     cx.fill(q.path,'evenodd');
+     cx.lineWidth=2.4/s;cx.strokeStyle='#6dff9a';
+     cx.stroke(q.path);
+    }
+    /* oddawane (z A do B) – pomarańczowo-czerwone */
+    if(P.give)for(const q of P.give){
+     if(!q.path||!vis(q.bb))continue;
+     cx.fillStyle='rgba(255,80,40,.5)';
+     cx.fill(q.path,'evenodd');
+     cx.lineWidth=2.4/s;cx.strokeStyle='#ff7a55';
+     cx.stroke(q.path);
+    }
+    cx.restore();
+   }catch(e){console.warn('SW peace map',e)}
+  };
+
+  const oldStart=typeof startPeace==='function'?startPeace:null;
+  window.startPeace=function(a,b,counter){
+   if(oldStart)oldStart(a,b,counter);
+   else{
+    G.pc={a,b,take:new Set(),give:new Set(),counter:!!counter,extra:{}};
+    try{const f=[a.fit,b.fit];fitLL(Math.min(f[0][0],f[1][0]),Math.min(f[0][1],f[1][1]),Math.max(f[0][2],f[1][2]),Math.max(f[0][3],f[1][3]));}catch(_){}
+   }
+   if(G.pc&&!G.pc.extra)G.pc.extra={};
+   renderPbar();draw();
+  };
+
+ }catch(e){console.warn('SW peace UI',e)}
+})();
+</script>
 </html>
