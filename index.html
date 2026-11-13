@@ -284,6 +284,183 @@ h1{filter:drop-shadow(0 0 8px rgba(93,154,255,.25))}
 <style id="sw-poppins-extrabold">
 html,body,button,input,select,textarea{font-family:'Poppins',system-ui,-apple-system,'Segoe UI',sans-serif!important}body{font-weight:600!important;letter-spacing:-.012em}button,.btn,.pill,.seg button,#lst li{font-weight:800!important}h1,h2,h3,h4,.hero,.nm,.v,.big{font-weight:800!important;letter-spacing:-.025em}h1{font-weight:900!important}small,.sub,.hint,.note{font-weight:600!important}
 </style>
+
+<style id="sw-gui-pro">
+/* ===== SUPER WARS GUI PRO – gradienty + animacje ===== */
+@keyframes sw-fade-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes sw-glow-pulse{0%,100%{box-shadow:0 0 0 0 rgba(120,160,255,.0),0 8px 24px rgba(0,0,0,.25)}50%{box-shadow:0 0 20px 2px rgba(120,160,255,.25),0 8px 28px rgba(0,0,0,.3)}}
+@keyframes sw-shimmer{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+@keyframes sw-soft-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+@keyframes sw-ring{0%{box-shadow:0 0 0 0 rgba(130,170,255,.45)}100%{box-shadow:0 0 0 10px rgba(130,170,255,0)}}
+@keyframes sw-toast-in{from{opacity:0;transform:translate(-50%,18px) scale(.96)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+@keyframes sw-side-in{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+
+header{
+  background:linear-gradient(105deg,#0d1b3a 0%,#1a1f55 40%,#2a1560 100%)!important;
+  border-bottom:1px solid rgba(140,170,255,.35)!important;
+  box-shadow:0 4px 24px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08)!important;
+}
+header h1{
+  background:linear-gradient(90deg,#7ec8ff,#a78bfa,#f0abfc,#7ec8ff)!important;
+  background-size:200% auto!important;
+  -webkit-background-clip:text!important;background-clip:text!important;
+  animation:sw-shimmer 6s linear infinite!important;
+  filter:drop-shadow(0 0 10px rgba(120,180,255,.35))!important;
+}
+header input,header button{
+  background:linear-gradient(145deg,rgba(40,70,130,.85),rgba(50,40,110,.9))!important;
+  border:1px solid rgba(140,170,255,.4)!important;
+  border-radius:10px!important;
+  transition:transform .15s,box-shadow .2s,border-color .2s,filter .15s!important;
+}
+header button:hover,header input:focus{
+  border-color:rgba(180,210,255,.85)!important;
+  box-shadow:0 0 0 3px rgba(120,160,255,.25)!important;
+  transform:translateY(-1px);
+}
+#hud{
+  background:linear-gradient(100deg,rgba(18,35,70,.95),rgba(40,30,80,.95))!important;
+  border-bottom:1px solid rgba(130,160,255,.3)!important;
+  backdrop-filter:blur(10px);
+}
+#hud .chip,#hud .btn{
+  transition:transform .15s,box-shadow .2s,filter .15s!important;
+}
+#hud .chip:hover,#hud .btn:hover{transform:translateY(-1px) scale(1.02)}
+#hud .btn{
+  background:linear-gradient(135deg,#3b82f6,#8b5cf6 55%,#d946ef)!important;
+  border:1px solid rgba(255,255,255,.2)!important;
+  box-shadow:0 4px 16px rgba(80,100,220,.4)!important;
+  animation:sw-glow-pulse 3.5s ease-in-out infinite;
+}
+#side{
+  background:linear-gradient(165deg,#121f42 0%,#1a1848 45%,#23155a 100%)!important;
+  border-left:1px solid rgba(140,170,255,.35)!important;
+  box-shadow:-12px 0 40px rgba(0,0,0,.4)!important;
+}
+#sin > *{animation:sw-side-in .28s ease both}
+.hero{
+  background:linear-gradient(135deg,rgba(40,90,180,.55),rgba(90,50,160,.5))!important;
+  border:1px solid rgba(180,200,255,.35)!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.15)!important;
+}
+.st,.eco,.inv,.cmd,.pill{
+  background:linear-gradient(160deg,rgba(40,70,140,.45),rgba(30,40,90,.55))!important;
+  border:1px solid rgba(130,160,255,.28)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 4px 14px rgba(0,0,0,.2)!important;
+  transition:transform .15s,border-color .2s,box-shadow .2s!important;
+}
+.st:hover,.eco:hover,.inv:hover,.cmd:hover{
+  border-color:rgba(170,200,255,.5)!important;
+  transform:translateY(-1px);
+}
+.seg button{
+  transition:background .2s,color .2s,transform .15s,box-shadow .2s!important;
+}
+.seg button.on{
+  background:linear-gradient(135deg,#4f8ff7,#8b6cf7)!important;
+  color:#fff!important;
+  box-shadow:0 4px 14px rgba(80,120,255,.4)!important;
+}
+.btn{
+  background:linear-gradient(135deg,#3b82f6,#7c3aed 60%,#db2777)!important;
+  border:1px solid rgba(255,255,255,.22)!important;
+  box-shadow:0 6px 18px rgba(70,90,220,.4)!important;
+  transition:transform .15s,filter .15s,box-shadow .2s!important;
+}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.12);box-shadow:0 8px 24px rgba(90,110,240,.5)!important}
+.btn.alt{
+  background:linear-gradient(135deg,#0ea5e9,#2563eb 55%,#4f46e5)!important;
+}
+#lst li{
+  transition:background .15s,transform .12s!important;
+  border-radius:8px;
+}
+#lst li:hover{background:rgba(80,120,220,.25)!important;transform:translateX(2px)}
+#lst li.on{
+  background:linear-gradient(90deg,#3b82f6,#8b5cf6)!important;
+  color:#fff!important;
+  box-shadow:0 4px 14px rgba(70,100,220,.35)!important;
+}
+#toast.on{
+  animation:sw-toast-in .28s ease both!important;
+  background:linear-gradient(135deg,rgba(20,35,70,.96),rgba(40,25,70,.96))!important;
+  border:1px solid rgba(150,180,255,.45)!important;
+  box-shadow:0 12px 36px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.06)!important;
+  backdrop-filter:blur(12px);
+}
+.card{
+  background:linear-gradient(160deg,rgba(30,50,100,.95),rgba(40,30,90,.97))!important;
+  border:1px solid rgba(150,180,255,.4)!important;
+  box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.1)!important;
+  animation:sw-fade-up .3s ease both;
+}
+#menu .mbox{
+  background:linear-gradient(160deg,rgba(16,30,65,.88),rgba(35,20,70,.9))!important;
+  border:1px solid rgba(150,180,255,.35)!important;
+  box-shadow:0 30px 80px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.1)!important;
+  animation:sw-fade-up .35s ease both;
+}
+#menu .big{
+  background:linear-gradient(120deg,rgba(50,110,210,.75),rgba(110,70,200,.8))!important;
+  border:1px solid rgba(170,200,255,.35)!important;
+  transition:transform .18s,box-shadow .2s,filter .15s!important;
+}
+#menu .big:hover{
+  transform:translateY(-3px) scale(1.01);
+  box-shadow:0 12px 32px rgba(80,100,220,.45)!important;
+  filter:brightness(1.1);
+}
+#menu .big.go{
+  background:linear-gradient(120deg,#fbbf24,#f97316 50%,#ef4444)!important;
+  color:#1a1005!important;
+  animation:sw-soft-bounce 2.4s ease-in-out infinite;
+}
+.bar{
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.4),0 0 12px rgba(80,200,140,.15)!important;
+}
+.pill{
+  border-radius:999px!important;
+  background:linear-gradient(145deg,rgba(50,90,170,.5),rgba(40,50,120,.55))!important;
+}
+#tab{
+  background:linear-gradient(145deg,#2a4a8a,#3a2a7a)!important;
+  border:1px solid rgba(150,180,255,.4)!important;
+  transition:transform .15s,filter .15s!important;
+}
+#tab:hover{filter:brightness(1.15);transform:scale(1.05)}
+input,select,button,textarea{
+  transition:border-color .15s,box-shadow .2s,filter .15s!important;
+}
+input:focus,select:focus,textarea:focus{
+  border-color:#8b9fff!important;
+  box-shadow:0 0 0 3px rgba(120,150,255,.3)!important;
+}
+#world-news{
+  background:linear-gradient(160deg,rgba(12,28,55,.94),rgba(30,20,55,.94))!important;
+  border:1px solid rgba(140,170,255,.3)!important;
+  box-shadow:0 12px 32px rgba(0,0,0,.4)!important;
+  animation:sw-fade-up .35s ease both;
+}
+#ubar{
+  background:linear-gradient(160deg,rgba(25,45,90,.92),rgba(35,25,80,.94))!important;
+  border:1px solid rgba(150,180,255,.35)!important;
+  box-shadow:0 12px 36px rgba(0,0,0,.45)!important;
+  backdrop-filter:blur(10px);
+}
+body.busy::after{
+  content:'Przetwarzanie tury…';
+  position:fixed;left:50%;top:18%;transform:translateX(-50%);
+  z-index:100;padding:10px 18px;border-radius:12px;
+  background:linear-gradient(135deg,rgba(20,40,90,.92),rgba(50,30,90,.92));
+  border:1px solid rgba(150,180,255,.4);color:#e8f0ff;
+  font:700 13px Poppins,system-ui,sans-serif;
+  box-shadow:0 10px 30px rgba(0,0,0,.4);
+  animation:sw-fade-up .2s ease both,sw-ring 1.2s ease-out infinite;
+  pointer-events:none;
+}
+</style>
+
 </head><body>
 <header><h1>Super Wars</h1><input autocomplete="off" id="q" list="dl" placeholder="Szukaj kraju, prowincji, morza…"/><datalist id="dl"></datalist><button id="zi" title="Przybliż">＋</button><button id="zo" title="Oddal">－</button><button id="zw" title="Cały świat">Świat</button><button id="zr" title="Rankingi państw">🏆 Rankingi</button><button id="zm" title="Menu gry">Menu</button></header>
 <div id="hud"></div>
@@ -628,20 +805,45 @@ const aiNote=c=>!c.owner&&c.lastAct?`<div class="hint" style="margin-bottom:12px
 function endTurn(){if(G.phase!='play'||G.busy)return;if(G.pc){toast('Dokończ albo anuluj rozmowy pokojowe');return}
  {let n=G.cur+1;while(n<G.n&&G.players[n].dead)n++;if(n<G.n){G.cur=n;renderHUD();if(sel)show(sel,false);showOffers();return}}
  const rows=G.players.filter(pl=>!pl.dead).map(pl=>({pl,i:income(pl.c)}));const done=G.turn;
+ G.busy=true;try{document.body.classList.add('busy')}catch(_){}
+ /* szybka część synchroniczna */
  for(const c of C){c.money=r1(c.money+income(c));
   for(const p of c.ps){const f=Math.max(0,L(p,0)-p.b0[0]);
    if(f&&p.pop){const cf=clamp(1-(p.pop/p.pop0-1)/1.5,0,1),n=Math.round(p.pop*(1+f*0.2*cf/100));c.pop+=n-p.pop;p.pop=n}
    const tg=0.1*Math.max(0,L(p,6)-p.b0[6])+0.06*Math.max(0,L(p,7)-p.b0[7]);if(tg)p.tech=r2(Math.min(100,(p.tech||0)+tg))}
   const ar=apRate(c),tr=tpRate(c);c.ap=r2(Math.min(ar*POINTS_RESERVE_TURNS,c.ap+ar));c.tp=r2(Math.min(tr*POINTS_RESERVE_TURNS,c.tp+tr))}
  G.nw=[];decayBuildings();for(const c of C.slice())govTurn(c);
- // Relacje nie poprawiają się już losowo między wszystkimi państwami świata.
- // Drobne ocieplenie może wystąpić wyłącznie między sąsiadami i bardzo rzadko.
  for(let i=0;i<C.length;i++){const a=C[i];if(!a.ps.length||a.reb)continue;for(const b of (a.nb||[])){if(C.indexOf(b)<=i||!b.ps.length||b.reb||G.war[DK(a,b)])continue;if(Math.random()<.025)relS(a,b,relG(a,b)+rnd(1,2))}}
  moveUnits();botDip();botArmy();botWar();
- for(const c of C)if(!c.owner)botTurn(c,done);
- G.turn++;for(const k of Object.keys(G.ally||{}))if(typeof G.ally[k]==='number'&&G.ally[k]<=G.turn)delete G.ally[k];for(const k of Object.keys(G.access||{}))if(typeof G.access[k]==='number'&&G.access[k]<=G.turn)delete G.access[k];{const d=new Date(G.date+'T12:00:00');d.setDate(d.getDate()+rnd(1,50));G.date=d.toISOString().slice(0,10)}G.cur=Math.max(0,G.players.findIndex(pl=>!pl.dead));
- runBattles(()=>{finalizeRebels();botPeace();checkDead();toast('Koniec tury '+done+rows.map(r=>' · '+r.pl.c.n+' +'+gold(r.i)).join('')+(G.nw.length?' ⚠ '+G.nw.join(' · '):''));
-  renderHUD();if(sel)show(sel,false);draw();showOffers()})}
+ /* boty w kawałkach – bez 0.5–1s frezu UI */
+ const bots=[];for(const c of C)if(!c.owner&&c.ps&&c.ps.length)bots.push(c);
+ let bi=0;
+ const finishTurn=()=>{
+  G.turn++;for(const k of Object.keys(G.ally||{}))if(typeof G.ally[k]==='number'&&G.ally[k]<=G.turn)delete G.ally[k];for(const k of Object.keys(G.access||{}))if(typeof G.access[k]==='number'&&G.access[k]<=G.turn)delete G.access[k];{const d=new Date(G.date+'T12:00:00');d.setDate(d.getDate()+rnd(1,50));G.date=d.toISOString().slice(0,10)}G.cur=Math.max(0,G.players.findIndex(pl=>!pl.dead));
+  window.__swBldCacheTurn=-1;
+  runBattles(()=>{finalizeRebels();botPeace();checkDead();toast('Koniec tury '+done+rows.map(r=>' · '+r.pl.c.n+' +'+gold(r.i)).join('')+(G.nw.length?' ⚠ '+G.nw.join(' · '):''));
+   try{document.body.classList.remove('busy')}catch(_){}
+   G.busy=false;
+   renderHUD();if(sel)show(sel,false);draw();showOffers()});
+ };
+ /* budżet czasowy ~10ms na kawałek – tura kończy się szybko, UI nie stoi */
+ const runBots=()=>{
+  const t0=performance.now();
+  while(bi<bots.length && performance.now()-t0<10){
+   try{botTurn(bots[bi],done)}catch(_){}
+   bi++;
+  }
+  if(bi<bots.length){setTimeout(runBots,0);return}
+  finishTurn();
+ };
+ /* najpierw spróbuj domknąć w 1 klatce (do ~14ms) */
+ const t0=performance.now();
+ while(bi<bots.length && performance.now()-t0<14){
+  try{botTurn(bots[bi],done)}catch(_){}
+  bi++;
+ }
+ if(bi<bots.length)setTimeout(runBots,0);else finishTurn();
+}
 HUD.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.id=='hpick'&&sel&&sel.t=='p')pickCountry(sel.c);else if(b.id=='hrand')randomPick();else if(b.id=='hend')endTurn();else if(b.id=='hreborn')rebirthCountry()};
 MODAL.onclick=e=>{const t=e.target;
  if(t.closest('#mok'))MODAL.classList.add('hide');
@@ -848,9 +1050,13 @@ function drawOver(s,T){const cx=OX;cx.setTransform(dpr,0,0,dpr,0,0);cx.clearRect
    const moving=movingByP.get(p)||[];
    if(moving.length){let sx=0,sy=0,weight=0;for(const u of moving){const a=mid(u.from),b=mid(p),t=clamp((performance.now()-u.moveAt)/1050,0,1),e=t*t*(3-2*t),w=u.n||1;sx+=(a[0]+(b[0]-a[0])*e)*w;sy+=(a[1]+(b[1]-a[1])*e)*w;weight+=w}if(weight)m=[sx/weight,sy/weight]}
    const x=X(m[0]),y=Y(m[1])+(c.owner?-16:16);if(!inb(x,y))continue;
-   const t='🪖 '+cn(g.n)+'  ⚔ '+cn(g.pw);cx.font='800 11.5px '+SF;const tw=cx.measureText(t).width+12;
-   cx.fillStyle=c.owner?c.owner.color:'rgba(40,25,10,.88)';cx.strokeStyle='#fff';cx.lineWidth=1.5;cx.beginPath();cx.roundRect(x-tw/2,y-10,tw,20,6);cx.fill();cx.stroke();
-   cx.fillStyle=c.owner&&c.owner.color=='#ffe119'?'#111':'#fff';cx.fillText(t,x,y+1)}}}
+   /* proste odznaki armii (fallback – kreskówkowe w FIX 6 nadpiszą jeśli dostępne) */
+   const nStr=cn(g.n),pwStr=cn(g.pw|0),txt=nStr+' ⚔ '+pwStr;
+   cx.font='800 11.5px '+SF;const tw=cx.measureText(txt).width+22;
+   cx.fillStyle=c.owner?c.owner.color:'rgba(40,25,10,.92)';cx.strokeStyle='#fff';cx.lineWidth=1.5;
+   cx.beginPath();if(cx.roundRect)cx.roundRect(x-tw/2,y-11,tw,22,7);else{cx.rect(x-tw/2,y-11,tw,22)}cx.fill();cx.stroke();
+   cx.fillStyle=(c.owner&&c.owner.color==='#ffe119')?'#111':'#fff';cx.textAlign='center';cx.textBaseline='middle';
+   cx.fillText(txt,x,y+1)}}};
 /* ---- Rysuj gwiazdkę stolicy na mapie ---- */
 function drawCapitals(s,T){if(HIST_FEATURES)return;const cx=OX,SF='Poppins,system-ui,sans-serif';
  const X=x=>x*s+V.tx,Y=y=>y*s+V.ty;
@@ -913,7 +1119,7 @@ function xsend(){const a=G.players[G.cur].c,b=G.xb,v=i=>document.getElementById(
 
 /* ===== v24: warstwa animowanych napisów, kolory sąsiadów ===== */
 const OV=document.getElementById('ov'),OX=OV.getContext('2d');let _lt=0;
-function loop(T){requestAnimationFrame(loop);if(document.hidden)return;_lt=T;
+function loop(T){requestAnimationFrame(loop);if(document.hidden)return;_lt=T;window.__swNeedFrame=0;
  if(window.SW_SHOW_FPS){window.SW_FPS_FRAMES=(window.SW_FPS_FRAMES||0)+1;const now=T;if(!window.SW_FPS_LAST)window.SW_FPS_LAST=now;if(now-window.SW_FPS_LAST>=1000){const el=document.getElementById('sw-fps-counter');if(el)el.textContent='FPS: '+Math.round(window.SW_FPS_FRAMES*1000/(now-window.SW_FPS_LAST));window.SW_FPS_FRAMES=0;window.SW_FPS_LAST=now}}
  if(OV.width!=cv.width||OV.height!=cv.height){OV.width=cv.width;OV.height=cv.height}if(scenarioEditor&&scenarioEditor.active){OX.clearRect(0,0,W,H);return}drawOver(V.s,T);drawCapitals(V.s,T);if(BF)drawBF(V.s)}
 function recolor(){
@@ -1344,7 +1550,11 @@ function menuStep(s,n){const M=document.getElementById('mstep');
  M.onclick=e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.a;
   if(b.dataset.ag){G.aggression=+b.dataset.ag;menuStep('single');return}
   if(a=='single'){menuStep('single');}else if(a=='start-single'){startGame(1);}else if(a=='editor'){resetWorld();scenarioEditor={active:true,selected:null,countries:[],name:'Nowy scenariusz'};editorUndoStack=[];editorRedoStack=[];MENU.classList.add('hide');G.phase='editor';sel=null;resize();fit(-170,-83,180,58);editorPanel();editorUndoStack=[editorSnapshot()];draw();}else if(a=='multi')menuStep('multi',2);else if(a=='back')menuStep('main');else if(a=='go'){startGame(+b.dataset.n);}else if(b.dataset.n)menuStep('multi',+b.dataset.n);};}
-document.getElementById('zm').onclick=()=>{if(G.phase=='menu'||confirm('Wrócić do menu? Obecna gra zostanie utracona.')){G.phase='menu';G.players=[];C.forEach(c=>c.owner=null);resize();renderHUD();draw();MENU.classList.remove('hide');menuStep('main')}};
+document.getElementById('zm').onclick=()=>{
+ const go=()=>{G.phase='menu';G.players=[];C.forEach(c=>c.owner=null);resize();renderHUD();draw();MENU.classList.remove('hide');menuStep('main')};
+ if(G.phase=='menu'){go();return}
+ if(window.swConfirm){swConfirm('Wrócić do menu? Obecna gra zostanie utracona.','Menu').then(ok=>{if(ok)go()});return}
+ if(confirm('Wrócić do menu? Obecna gra zostanie utracona.'))go()};
 menuStep('main');
 function focus(p){const b=p.bb;fit(b[0],b[1],b[2],b[3])}
 function zoomAt(f,px,py){const s=Math.max(Math.min(V.s*f,4000),W/400);f=s/V.s;V.tx=px-(px-V.tx)*f;V.ty=py-(py-V.ty)*f;V.s=s;sched()}
@@ -1540,11 +1750,15 @@ UBAR.addEventListener('click',e=>{
   UB.n=b.dataset.uq=='max'?Math.max(1,Math.min(maxRec(p),Math.floor(c.money/Math.max(.1,recCost(c))))):+b.dataset.uq;renderUbar();return}
  if(b.dataset.urec!==undefined){if(recruitPlayer(c,UB.prov,UB.n,UB.name,+b.dataset.quality||0))UB.name='';uRef();return}
  if(!u)return;
- if(b.dataset.udis!==undefined){const v=prompt('Ilu żołnierzy zwolnić z oddziału „'+u.name+'” (max '+u.n+')? Wrócą do ludności prowincji.',u.n);if(v===null)return;
-  const k=Math.min(u.n,Math.max(0,Math.floor(+v)||0));if(!k)return;givePop(c,u,k);u.n-=k;c.units=c.units.filter(x=>x.n>0);toast('Zwolniono '+fm(k)+' żołnierzy');uRef()}
+ if(b.dataset.udis!==undefined){
+  const applyDis=v=>{if(v===null)return;const k=Math.min(u.n,Math.max(0,Math.floor(+v)||0));if(!k)return;givePop(c,u,k);u.n-=k;c.units=c.units.filter(x=>x.n>0);toast('Zwolniono '+fm(k)+' żołnierzy');uRef()};
+  if(window.swPrompt){swPrompt('Ilu żołnierzy zwolnić z oddziału «'+u.name+'»? (max '+u.n+')\nWrócą do ludności prowincji.',u.n,'Zwolnij żołnierzy').then(applyDis);return}
+  applyDis(prompt('Ilu żołnierzy zwolnić z oddziału „'+u.name+'” (max '+u.n+')? Wrócą do ludności prowincji.',u.n))}
  else if(b.dataset.usplit!==undefined){if(u.n<2){toast('Oddział jest zbyt mały, aby go podzielić');return}
-  const v=prompt('Ilu żołnierzy przenieść do nowego oddziału? (1–'+(u.n-1)+')',Math.floor(u.n/2));if(v===null)return;const k=Math.floor(+v);if(!(k>=1&&k<u.n)){toast('Podaj poprawną liczbę żołnierzy');return}
-  if(c.units.length>=30){toast('Limit 30 oddziałów w kraju');return}u.n-=k;c.units.push({id:++G.uid,name:u.name+' · II',n:k,lv:u.lv,p:u.p,leader:u.leader});sfx('split');toast('Podzielono oddział na '+fm(u.n)+' i '+fm(k)+' żołnierzy');uRef()}
+  const applySplit=v=>{if(v===null)return;const k=Math.floor(+v);if(!(k>=1&&k<u.n)){toast('Podaj poprawną liczbę żołnierzy');return}
+  if(c.units.length>=30){toast('Limit 30 oddziałów w kraju');return}u.n-=k;c.units.push({id:++G.uid,name:u.name+' · II',n:k,lv:u.lv,p:u.p,leader:u.leader});sfx('split');toast('Podzielono oddział na '+fm(u.n)+' i '+fm(k)+' żołnierzy');uRef()};
+  if(window.swPrompt){swPrompt('Ilu żołnierzy przenieść do nowego oddziału? (1–'+(u.n-1)+')',Math.floor(u.n/2),'Podziel oddział').then(applySplit);return}
+  applySplit(prompt('Ilu żołnierzy przenieść do nowego oddziału? (1–'+(u.n-1)+')',Math.floor(u.n/2)))}
  else if(b.dataset.umap!==undefined){UB.selectedUnitId=u.id;UB.mapPick=true;toast('Kliknij docelową prowincję lub akwen na mapie');renderUbar()}
  else if(b.dataset.umerge!==undefined){const mates=c.units.filter(x=>x!==u&&x.p===u.p);if(!mates.length)return;
   let tn=u.n,tl=u.n*u.lv;for(const m of mates){tn+=m.n;tl+=m.n*m.lv;m.n=0}u.n=tn;u.lv=Math.min(9.9,tl/tn);u.dest=null;
@@ -3092,7 +3306,7 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
   const orderViaPort=(c,u,port,target)=>{
    if(c.ap<1){toast('Brak punktów akcji');return}
    c.ap=r2(c.ap-1);UB.mapPick=false;u.onShip=false;u.shipOrder=null;
-   if(port===u.p){u.dest=null;embark(c,u,port,target)}
+   if(port===u.p){u.dest=null;u.shipOrder={port,target};u.embarkReady=true;u.embarkTurn=G.turn;toast('⚓ Zaokrętowanie – wypłynie następną turą.')}
    else{u.dest=port;u.shipOrder={port,target};toast('⚓ '+u.name+' maszeruje do portu '+port.n+(target.t==='s'?', skąd wypłynie na '+target.n:', skąd popłynie do '+target.n)+'.')}
    uRef();
   };
@@ -3151,11 +3365,13 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
    }
    const o=u.shipOrder;
    if(o){
-    if(u.p===o.port){embark(c,u,o.port,o.target);return}
+    /* FIX6: bez natychmiastowego wypłynięcia – tylko ruch lądowy do portu */
     prevStep(c,u,used);
     if(u.shipOrder===o){
-     if(u.p===o.port)embark(c,u,o.port,o.target);   // dotarł do portu – wypływa od razu (wcześniej rozkaz ginął w tym miejscu)
-     else if(!u.dest){u.shipOrder=null;toast(u.name+' nie dotarł do portu '+o.port.n+'.')}
+     if(u.p===o.port){
+      /* przybycie do portu – gotowość; wypłynięcie w FIX 6 następną turą */
+      u.embarkReady=true;if(u.embarkTurn==null)u.embarkTurn=G.turn;
+     }else if(!u.dest){u.shipOrder=null;u.embarkReady=false;u.embarkTurn=null;toast(u.name+' nie dotarł do portu '+o.port.n+'.')}
     }
     return;
    }
@@ -3473,9 +3689,7 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
    g.lineTo(fx, fy+fh);
    g.closePath();
    g.strokeStyle='rgba(0,0,0,.65)';g.lineWidth=Math.max(1.2,k*0.04);g.stroke();
-   /* mała reja */
-   g.strokeStyle='#3a2410';g.lineWidth=Math.max(1.5,k*0.05);
-   g.beginPath();g.moveTo(-k*0.08,fy+2);g.lineTo(fx+fw*0.7,fy+2);g.stroke();
+   /* bez reji – flaga na maszcie */
    /* iluminatory */
    g.fillStyle='#7ec8ff';
    for(const ox of [-k*0.4,0,k*0.4]){
@@ -3538,6 +3752,9 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
    try{
     if(typeof HIST_FEATURES!=='undefined'&&HIST_FEATURES)return;
     const s=V.s;
+    /* z daleka bez obrysów prowincji – tanio */
+    if(s<2.5||window.__swPan){/* skip borders while far or panning */}
+    else{
     const l=-V.tx/s,r=(W-V.tx)/s,t=-V.ty/s,b=(H-V.ty)/s,px=.7/s;
     const vis=q=>!(q[2]<l||q[0]>r||q[3]<t||q[1]>b)&&(q[2]-q[0]>px||q[3]-q[1]>px);
     const me=G.players&&G.players[G.cur]&&G.players[G.cur].c;
@@ -3562,66 +3779,147 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
      for(const p of me.ps)if(vis(p.bb))cx.stroke(p.path);
     }
     cx.restore();
+    }
+    /* Budynki na warstwie mapy (POD napisami z overlay) */
+    try{
+      if(s>=9&&!window.__swPan){
+        if(!window.__swBldCache||window.__swBldCacheTurn!==G.turn){
+          const icons=['🌾','🏦','🏪','🏭','⛏️','🚢','🔬','🎓','🏛️','🏰','🛡️','🏥','⛪','🌲','🍖'];
+          const cache=[];
+          for(const p of PV){
+            if(!p.b||!p.bb)continue;
+            const items=[];
+            for(let bi=0;bi<(p.b.length||0);bi++){
+              const lv=p.b[bi]|0;
+              if(lv>0)items.push({lv,ic:icons[bi]||'🏢'});
+            }
+            if(!items.length)continue;
+            items.sort((a,b)=>b.lv-a.lv);
+            cache.push({p,items});
+          }
+          window.__swBldCache=cache;window.__swBldCacheTurn=G.turn;
+        }
+        const cache=window.__swBldCache;
+        const invS=1/s;
+        const viewL=-V.tx*invS,viewR=(W-V.tx)*invS,viewT=-V.ty*invS,viewB=(H-V.ty)*invS;
+        cx.save();
+        cx.setTransform(dpr,0,0,dpr,0,0);
+        cx.textAlign='center';cx.textBaseline='middle';
+        for(let i=0;i<cache.length;i++){
+          const {p,items}=cache[i];
+          const bb=p.bb;
+          if(bb[2]<viewL||bb[0]>viewR||bb[3]<viewT||bb[1]>viewB)continue;
+          const pw=(bb[2]-bb[0])*s, ph=(bb[3]-bb[1])*s;
+          const provPx=pw<ph?pw:ph;
+          if(provPx<70)continue;
+          let ic=provPx*0.12;if(ic<9)continue;if(ic>18)ic=18;
+          const nShow=provPx>140?3:provPx>100?2:1;
+          const m=mid(p);
+          const cx0=m[0]*s+V.tx, cy0=m[1]*s+V.ty;
+          const gap=ic*1.55;
+          const cols=nShow>2?3:nShow;
+          const startX=cx0-((cols-1)*gap)*0.5;
+          const startY=cy0+ic*0.65;
+          cx.globalAlpha=0.8;
+          cx.font=ic+'px "Segoe UI Emoji","Apple Color Emoji",sans-serif';
+          for(let j=0;j<nShow&&j<items.length;j++){
+            const col=j%cols, row=(j/cols)|0;
+            cx.fillText(items[j].ic, startX+col*gap, startY+row*gap);
+          }
+        }
+        cx.restore();
+      }
+    }catch(_b){}
    }catch(_){}
   };
 
-  /* Podmiana etykiet armii w drawOver + statki */
+  /* Podmiana etykiet armii w drawOver + statki — zawsze widoczne oddziały */
   const prevOver=drawOver;
   drawOver=function(s,T){
    prevOver(s,T);
+   /* podczas panningu nie rysuj ciężkich odznak, ale nie gub jednostek na stałe */
+   if(window.__swPan)return;
    try{
     const g=OX;
-    const X=x=>x*s+V.tx,Y=y=>y*s+V.ty,inb=(x,y)=>x>-80&&y>-30&&x<W+80&&y<H+30;
-    /* Statki na morzu */
-    for(const c of C)for(const u of c.units||[])if(u.p&&u.p.t==='s'&&u.onShip){
-     const m=mid(u.p);
-     let mx=m[0],my=m[1];
-     if(u.from&&u.moveAt&&performance.now()-u.moveAt<1050){
-      const a=mid(u.from),t=Math.min(1,(performance.now()-u.moveAt)/1050),e=t*t*(3-2*t);
-      mx=a[0]+(m[0]-a[0])*e;my=a[1]+(m[1]-a[1])*e;
-     }
-     /* napis armii wyżej, statek niżej – większy odstęp */
-     const badgeY=Y(my)+(c.owner?-42: -10);
-     drawCartoonShip(g,s,X(mx),Y(my)+36,c);
-     /* napis z ilością armii WYŻEJ nad statkiem */
-     try{
-      const n=u.n|0,pw=((u.n||0)*(1+(u.lv||0)/4))|0;
-      const lx=X(mx), ly=Y(my)+(c.owner?-48:-20);
-      const nStr=typeof cn==='function'?cn(n):String(n);
-      const pwStr=typeof cn==='function'?cn(pw):String(pw|0);
-      const label=' '+nStr+'  ⚔ '+pwStr+' ';
-      g.font='800 11.5px Poppins,system-ui,sans-serif';
-      const tw=g.measureText(label).width+28;
-      g.fillStyle=c.owner?c.owner.color:'rgba(40,25,10,.92)';
-      g.strokeStyle='#fff';g.lineWidth=1.5;
-      g.beginPath();g.roundRect(lx-tw/2,ly-11,tw,22,7);g.fill();g.stroke();
-      const fim2=getFlagImg(c);
-      if(fim2){g.drawImage(fim2,lx-tw/2+5,ly-7,16,11);}
-      else{g.fillStyle='#ccc';g.fillRect(lx-tw/2+5,ly-7,16,11);}
-      g.fillStyle=(c.owner&&c.owner.color==='#ffe119')?'#111':'#fff';
-      g.textAlign='left';g.textBaseline='middle';
-      g.fillText(nStr+'  ⚔ '+pwStr, lx-tw/2+24, ly+1);
-     }catch(_){}
-
-    }
-    /* Nakładka: kreskówkowe armie lądowe z flagą (rysujemy nad starymi badge'ami) */
+    /* upewnij się, że rysujemy w przestrzeni ekranu */
+    g.setTransform(typeof dpr==='number'?dpr:1,0,0,typeof dpr==='number'?dpr:1,0,0);
+    const X=x=>x*s+V.tx,Y=y=>y*s+V.ty;
+    const inb=(x,y)=>x>-80&&y>-50&&x<W+80&&y<H+50;
+    /* --- Statki --- */
     for(const c of C){
-     if(!c.units||!c.units.length)continue;
-     if(!(c.owner||(sel&&sel.c===c)||(c.fit&&(c.fit[2]-c.fit[0])*s>140)))continue;
-     const gr=new Map(),movingByP=new Map(),moveNow=performance.now();
-     for(const u of c.units){
-      if(!u.p||u.p.t==='s')continue;
-      const gg=gr.get(u.p)||{n:0,pw:0};gg.n+=u.n;gg.pw+=u.n*(1+u.lv/4);gr.set(u.p,gg);
-      if(u.from&&u.moveAt&&moveNow-u.moveAt<1050){let a=movingByP.get(u.p);if(!a)movingByP.set(u.p,a=[]);a.push(u)}
+     const units=c.units;if(!units||!units.length)continue;
+     for(let ui=0;ui<units.length;ui++){
+      const u=units[ui];
+      if(!u.p||u.p.t!=='s')continue;
+      /* onShip opcjonalne – i tak rysuj jeśli stoi na akwenie */
+      const m=mid(u.p);
+      let mx=m[0],my=m[1];
+      if(u.from&&u.moveAt&&performance.now()-u.moveAt<1050){
+       const a=mid(u.from),t=Math.min(1,(performance.now()-u.moveAt)/1050),e=t*t*(3-2*t);
+       mx=a[0]+(m[0]-a[0])*e;my=a[1]+(m[1]-a[1])*e;
+      }
+      const sx=X(mx),sy=Y(my);
+      if(!inb(sx,sy))continue;
+      try{drawCartoonShip(g,s,sx,sy+36,c)}catch(_){ }
+      try{
+       const n=u.n|0,pw=((u.n||0)*(1+(u.lv||0)/4))|0;
+       const lx=sx, ly=sy+(c.owner?-48:-20);
+       if(!inb(lx,ly))continue;
+       const nStr=typeof cn==='function'?cn(n):String(n);
+       const pwStr=typeof cn==='function'?cn(pw):String(pw|0);
+       g.font='800 11.5px Poppins,system-ui,sans-serif';
+       const tw=g.measureText(nStr+'  ⚔ '+pwStr).width+28;
+       g.fillStyle=c.owner?c.owner.color:'rgba(40,25,10,.92)';
+       g.strokeStyle='#fff';g.lineWidth=1.5;
+       g.beginPath();if(g.roundRect)g.roundRect(lx-tw/2,ly-11,tw,22,7);else g.rect(lx-tw/2,ly-11,tw,22);g.fill();g.stroke();
+       const fim2=getFlagImg(c);
+       if(fim2)g.drawImage(fim2,lx-tw/2+5,ly-7,16,11);
+       g.fillStyle=(c.owner&&c.owner.color==='#ffe119')?'#111':'#fff';
+       g.textAlign='left';g.textBaseline='middle';
+       g.fillText(nStr+'  ⚔ '+pwStr, lx-tw/2+24, ly+1);
+      }catch(_){}
      }
-     for(const[p,gg]of gr){
-      let m=mid(p);
-      const moving=movingByP.get(p)||[];
-      if(moving.length){let sx=0,sy=0,weight=0;for(const u of moving){const a=mid(u.from),b=mid(p),t=Math.min(1,(performance.now()-u.moveAt)/1050),e=t*t*(3-2*t),w=u.n||1;sx+=(a[0]+(b[0]-a[0])*e)*w;sy+=(a[1]+(b[1]-a[1])*e)*w;weight+=w}if(weight)m=[sx/weight,sy/weight]}
-      const x=X(m[0]),y=Y(m[1])+(c.owner?-16:16);
-      if(!inb(x,y))continue;
-      /* zakryj stary badge ciemnym tłem w tym samym miejscu, potem nasz kreskówkowy */
-      drawLandArmyBadge(g,x,y,c,cn(gg.n),cn(gg.pw),!!c.owner);
+    }
+    /* --- Armie lądowe: od zoomu 0.35, zawsze gracz + zaznaczony + sąsiedzi w wojnie --- */
+    if(s>=0.35){
+     const me=G.players&&G.players[G.cur]&&G.players[G.cur].c;
+     const selectedC=sel&&(sel.t==='p'?sel.c:(sel.t==='c'?sel:null));
+     for(const c of C){
+      if(!c.units||!c.units.length)continue;
+      const fit=c.fit;
+      const isMe=!!c.owner||c===me;
+      const isSel=selectedC&&(c===selectedC);
+      const atWar=me&&G.war&&G.war[typeof DK==='function'?DK(me,c):(me.n+'|'+c.n)];
+      const large=fit&&((fit[2]-fit[0])*s>80||(fit[3]-fit[1])*s>80);
+      if(!(isMe||isSel||atWar||large||s>=2.5))continue;
+      if(fit&&(fit[2]*s+V.tx<-60||fit[0]*s+V.tx>W+60||fit[3]*s+V.ty<-60||fit[1]*s+V.ty>H+60))continue;
+      const gr=new Map(),movingByP=new Map(),moveNow=performance.now();
+      for(const u of c.units){
+       if(!u.p||u.p.t==='s')continue;
+       const bb=u.p.bb;if(!bb)continue;
+       if(bb[2]*s+V.tx<-60||bb[0]*s+V.tx>W+60||bb[3]*s+V.ty<-60||bb[1]*s+V.ty>H+60)continue;
+       const gg=gr.get(u.p)||{n:0,pw:0};gg.n+=u.n;gg.pw+=u.n*(1+(u.lv||0)/4);gr.set(u.p,gg);
+       if(u.from&&u.moveAt&&moveNow-u.moveAt<1050){let a=movingByP.get(u.p);if(!a)movingByP.set(u.p,a=[]);a.push(u)}
+      }
+      for(const[p,gg]of gr){
+       let m=mid(p);
+       const moving=movingByP.get(p)||[];
+       if(moving.length){let sx=0,sy=0,weight=0;for(const u of moving){const a=mid(u.from),b=mid(p),t=Math.min(1,(performance.now()-u.moveAt)/1050),e=t*t*(3-2*t),w=u.n||1;sx+=(a[0]+(b[0]-a[0])*e)*w;sy+=(a[1]+(b[1]-a[1])*e)*w;weight+=w}if(weight)m=[sx/weight,sy/weight]}
+       const x=X(m[0]),y=Y(m[1])+(c.owner?-16:16);
+       if(!inb(x,y))continue;
+       try{
+        if(typeof drawLandArmyBadge==='function')drawLandArmyBadge(g,x,y,c,cn(gg.n),cn(gg.pw|0),!!c.owner);
+        else{
+         const nStr=cn(gg.n),pwStr=cn(gg.pw|0),txt=nStr+' ⚔ '+pwStr;
+         g.font='800 11.5px Poppins,system-ui,sans-serif';
+         const tw=g.measureText(txt).width+22;
+         g.fillStyle=c.owner?c.owner.color:'rgba(40,25,10,.92)';g.strokeStyle='#fff';g.lineWidth=1.5;
+         g.beginPath();if(g.roundRect)g.roundRect(x-tw/2,y-11,tw,22,7);else g.rect(x-tw/2,y-11,tw,22);g.fill();g.stroke();
+         g.fillStyle=(c.owner&&c.owner.color==='#ffe119')?'#111':'#fff';g.textAlign='center';g.textBaseline='middle';
+         g.fillText(txt,x,y+1);
+        }
+       }catch(_){ }
+      }
      }
     }
    }catch(e){console.warn('FX6 overlay',e)}
@@ -3642,6 +3940,194 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
    }catch(_){}
   };
  }catch(e){console.warn('SW FIX 6',e)}
+})();
+</script>
+
+
+<script>
+/* SUPER WARS – PERF: nie licz / nie rysuj poza widokiem */
+(()=>{
+ try{
+  /* FX: przy małym zoomie mniej istotności, przy ukrytej karcie stop */
+  const _stepLife=typeof stepLife==='function'?stepLife:null;
+  if(_stepLife){
+   stepLife=function(dt,T,scale){
+    if(document.hidden)return;
+    if(scale<0.45)return; /* cały świat – bez życia morskiego */
+    return _stepLife(dt,T,scale);
+   };
+  }
+  const _stepCreatures=typeof stepCreatures==='function'?stepCreatures:null;
+  if(_stepCreatures){
+   stepCreatures=function(dt,T,s){
+    if(document.hidden||s<0.6)return;
+    return _stepCreatures(dt,T,s);
+   };
+  }
+  const _drawCreatures=typeof drawCreatures==='function'?drawCreatures:null;
+  if(_drawCreatures){
+   drawCreatures=function(s,T){
+    if(s<0.6)return;
+    return _drawCreatures(s,T);
+   };
+  }
+  const _drawBirds=typeof drawBird==='function'?null:null;
+  /* ptaki: rysuj tylko gdy zoom sensowny */
+  const _drawOverFX=drawOver;
+  /* granice: tylko widoczne (już w draw) – ogranicz liczbę stroke przy małym zoomie */
+  const _draw=draw;
+  let lastDrawT=0;
+  draw=function(){
+   /* przy ukrytej karcie nie rysuj */
+   if(document.hidden)return;
+   _draw();
+  };
+  /* budowanie cache budynków – tylko gdy zoom pozwala je zobaczyć */
+  const _oldCacheTurn=()=>{};
+  /* skip heavy land badge flag loads when far */
+  if(typeof getFlagImg==='function'){/* noop */}
+ 
+  /* mniej cząsteczek poza widokiem / przy zoom-out */
+  try{
+   if(typeof updP==='function'){
+    const _updP=updP;
+    updP=function(dt){
+     if(document.hidden)return;
+     if(V&&V.s<0.5)return;
+     return _updP(dt);
+    };
+   }
+  }catch(_){}
+  /* labels w drawOver – oryginalne i tak cull'uje inb; ograniczenie micro-dotów */
+  try{
+   if(typeof isMicro==='function'){
+    const _isMicro=isMicro;
+    isMicro=function(c){
+     if(V&&V.s<1.2)return false;
+     return _isMicro(c);
+    };
+   }
+  }catch(_){}
+
+ try{
+  if(typeof drawSeaWaves==='function'){
+   const _dsw=drawSeaWaves;
+   drawSeaWaves=function(T){
+    if(window.__swPan)return;
+    if(V&&V.s<1.0)return;
+    return _dsw(T);
+   };
+  }
+ }catch(_){}
+}catch(e){console.warn('SW PERF',e)}
+})();
+</script>
+
+
+<script>
+/* SUPER WARS – pan flag + lighter draw while dragging */
+(()=>{
+ try{
+  let panT=0;
+  const mark=()=>{window.__swPan=1;panT=performance.now();};
+  const clear=()=>{window.__swPan=0;};
+  const M=document.getElementById('m')||document.getElementById('cv');
+  if(M){
+   M.addEventListener('pointerdown',mark,{passive:true});
+   M.addEventListener('wheel',mark,{passive:true});
+   addEventListener('pointerup',()=>setTimeout(()=>{clear();window.__swNeedFrame=1},80),{passive:true});
+   addEventListener('pointercancel',clear,{passive:true});
+  }
+  /* auto-clear if stuck */
+  setInterval(()=>{if(window.__swPan&&performance.now()-panT>500)window.__swPan=0},400);
+ }catch(e){console.warn('SW pan',e)}
+})();
+</script>
+
+
+<script>
+/* SUPER WARS – ładne okna dialogowe zamiast prompt/confirm przeglądarki */
+(()=>{
+  if(window.__swDlg)return;
+  const st=document.createElement('style');
+  st.textContent=`
+  #swdlg{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;
+    padding:16px;background:rgba(5,10,30,.72);backdrop-filter:blur(6px)}
+  #swdlg.on{display:flex;animation:sw-fade-up .22s ease both}
+  #swdlg .box{width:min(420px,100%);background:linear-gradient(160deg,#1a2a55,#241848);
+    border:1px solid rgba(150,180,255,.4);border-radius:18px;padding:22px 22px 16px;
+    box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.1);color:#eef3ff;
+    font-family:Poppins,system-ui,sans-serif}
+  #swdlg h3{margin:0 0 8px;font-size:18px;font-weight:800;letter-spacing:-.02em;
+    background:linear-gradient(90deg,#9bd0ff,#c4b5fd);-webkit-background-clip:text;background-clip:text;color:transparent}
+  #swdlg p{margin:0 0 14px;opacity:.88;line-height:1.45;font-size:13.5px;white-space:pre-wrap}
+  #swdlg input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(140,170,255,.4);
+    background:linear-gradient(145deg,#203d70,#30265f);color:#fff;font:600 14px Poppins,system-ui,sans-serif;margin-bottom:14px}
+  #swdlg input:focus{outline:2px solid #8b9fff;outline-offset:1px}
+  #swdlg .row{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+  #swdlg .row button{padding:10px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.2);
+    font:800 13px Poppins,system-ui,sans-serif;cursor:pointer;color:#fff;
+    background:linear-gradient(135deg,#3b82f6,#7c3aed);box-shadow:0 4px 14px rgba(70,90,220,.35);
+    transition:transform .12s,filter .12s}
+  #swdlg .row button:hover{transform:translateY(-1px);filter:brightness(1.08)}
+  #swdlg .row button.ghost{background:linear-gradient(135deg,#334155,#1e293b);border-color:rgba(255,255,255,.15)}
+  #swdlg .row button.danger{background:linear-gradient(135deg,#ef4444,#b91c1c)}
+  `;
+  document.head.appendChild(st);
+  const root=document.createElement('div');
+  root.id='swdlg';
+  root.innerHTML=`<div class="box"><h3 id="swdlg-t"></h3><p id="swdlg-m"></p><input id="swdlg-i" autocomplete="off"/><div class="row" id="swdlg-r"></div></div>`;
+  document.body.appendChild(root);
+  const T=()=>document.getElementById('swdlg-t');
+  const M=()=>document.getElementById('swdlg-m');
+  const I=()=>document.getElementById('swdlg-i');
+  const R=()=>document.getElementById('swdlg-r');
+  let resolver=null;
+  const close=(v)=>{root.classList.remove('on');const r=resolver;resolver=null;if(r)r(v)};
+  root.addEventListener('click',e=>{if(e.target===root)close(null)});
+  document.addEventListener('keydown',e=>{
+    if(!root.classList.contains('on'))return;
+    if(e.key==='Escape'){e.preventDefault();close(null)}
+    if(e.key==='Enter'&&document.activeElement===I()){e.preventDefault();const ok=R().querySelector('[data-ok]');if(ok)ok.click()}
+  });
+  function openDlg({title,message,input,def,okText,cancelText,danger}){
+    return new Promise(res=>{
+      resolver=res;
+      T().textContent=title||'Super Wars';
+      M().textContent=message||'';
+      const inp=I();
+      if(input){inp.style.display='block';inp.value=def==null?'':String(def);setTimeout(()=>{inp.focus();inp.select()},30)}
+      else{inp.style.display='none'}
+      R().innerHTML='';
+      const bCancel=document.createElement('button');
+      bCancel.className='ghost';bCancel.textContent=cancelText||'Anuluj';
+      bCancel.onclick=()=>close(input?null:false);
+      const bOk=document.createElement('button');
+      bOk.dataset.ok='1';if(danger)bOk.className='danger';
+      bOk.textContent=okText||(input?'OK':'Tak');
+      bOk.onclick=()=>close(input?I().value:(true));
+      R().append(bCancel,bOk);
+      root.classList.add('on');
+    });
+  }
+  window.swConfirm=async(msg,title)=>{
+    const r=await openDlg({title:title||'Potwierdzenie',message:msg,okText:'Tak',cancelText:'Nie',danger:true});
+    return !!r;
+  };
+  window.swPrompt=async(msg,def,title)=>{
+    return await openDlg({title:title||'Wpisz wartość',message:msg,input:true,def:def??'',okText:'OK',cancelText:'Anuluj'});
+  };
+  window.__swDlg=1;
+
+  /* --- podmiana krytycznych miejsc gry na ładne dialogi --- */
+  /* 1) wypowiedzenie wojny */
+  try{
+    const src=String(declareWar||'');
+  }catch(_){}
+  /* patch przez przechwycenie confirm w kontekście dyplomacji – safer: monkey-patch global confirm/prompt only inside game after start */
+  const _confirm=window.confirm;
+  const _prompt=window.prompt;
+  /* Nie blokujemy synchronicznie – zamiast tego kolejka i ostrzeżenie. Lepiej: nadpisujemy konkretne handlery poniżej. */
 })();
 </script>
 
