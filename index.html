@@ -491,13 +491,33 @@ function pick(px_,py_){const mh=microHit(px_,py_);if(mh)return mh;const wx=(px_-
  if(best)return best;
  for(const p of SV){const q=p.bb;if(wx<q[0]||wx>q[2]||wy<q[1]||wy>q[3])continue;if(cx.isPointInPath(p.path,wx,wy,'evenodd')&&(!best||p.a<best.a))best=p}
  return best}
+ // W trybie wydawania rozkazu omijamy microHit: ten mechanizm może
+ // przechwycić kliknięcie na wodzie jako mały obiekt/prowincję.
+ // Cel ruchu wybieramy bezpośrednio z geometrii mapy: ląd, a potem akwen.
+function pickMoveTarget(px_,py_){
+ const wx=(px_-V.tx)/V.s,wy=(py_-V.ty)/V.s;
+ cx.setTransform(1,0,0,1,0,0);
+ let best=null;
+ for(const p of PV){
+  const b=p.bb;
+  if(wx<b[0]||wx>b[2]||wy<b[1]||wy>b[3])continue;
+  if(cx.isPointInPath(p.path,wx,wy,'evenodd')&&(!best||p.a<best.a))best=p;
+ }
+ if(best)return best;
+ for(const sea of SV){
+  const b=sea.bb;
+  if(wx<b[0]||wx>b[2]||wy<b[1]||wy>b[3])continue;
+  if(cx.isPointInPath(sea.path,wx,wy,'evenodd')&&(!best||sea.a<best.a))best=sea;
+ }
+ return best;
+}
 const ll=c=>c?`${Math.abs(c[1]).toFixed(1)}°${c[1]<0?'S':'N'}, ${Math.abs(c[0]).toFixed(1)}°${c[0]<0?'W':'E'}`:'–';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const r1=v=>Math.round(v*10)/10,f1=v=>r1(v).toFixed(1).replace('.',',');
 const ecoBase=c=>c.pop0&&c.gdp?r1(clamp(32+(Math.log10(c.gdp*1e6/c.pop0)-2.7)/2.2*62,12,99.9)):null;
-const ecoC=c=>{const b=ecoBase(c);if(b==null)return null;const n=c.ps.length||1;return r1(clamp(b+c.ps.reduce((s,p)=>s+(p.eb||0)+bonusEco(p),0)/n,12,99.9))};
+const ecoC=c=>{const b=ecoBase(c);if(b==null)return null;const n=c.ps.length||1;return r1(b+c.ps.reduce((s,p)=>s+(p.eb||0)+bonusEco(p),0)/n)};
 const ecoP0=p=>{const b=ecoBase(p.c);if(b==null)return null;let v=b;if(p.pop0&&p.gdp){const r=(p.gdp/p.pop0)/(p.c.gdp/p.c.pop0);v=b+9*Math.log2(r)}return clamp(v,5,99.9)};
-const ecoP=p=>{const v=ecoP0(p);if(v==null)return null;return r1(clamp(v+(p.eb||0)+bonusEco(p),5,99.9))};
+const ecoP=p=>{const v=ecoP0(p);if(v==null)return null;return r1(v+(p.eb||0)+bonusEco(p))};
 const tier=v=>v==null?'brak danych':v<30?'bardzo słaba':v<45?'słaba':v<60?'rozwijająca się':v<75?'dobra':v<88?'bardzo dobra':'czołówka świata';
 const ecoBox=v=>v==null?'':`<div class="eco" data-tip="Ekonomia 0–100: PKB na mieszkańca w skali logarytmicznej + inwestycje + Targowiska (0,4/poz.) i Fabryki (0,6/poz.)"><div class="top"><small>Ekonomia</small><div class="v">${f1(v)}<span> / 100</span></div></div><div class="bar"><i style="left:${v}%"></i></div><div class="tier">Poziom rozwoju: ${tier(v)}</div></div>`;
 const st=(l,v,tip)=>`<div class="st"${tip?` data-tip="${esc(tip)}"`:''}><small>${l}</small><b>${v}</b></div>`;
@@ -508,7 +528,7 @@ seg.onclick=e=>{const b=e.target.closest('button');if(!b)return;TAB=b.dataset.t;
 const cmdCard=c=>`<h3>Dowódca</h3><div class="cmd"><div class="av" style="background:linear-gradient(140deg,hsl(${c.h.toFixed(0)},${c.s.toFixed(0)}%,${Math.max(22,c.l-12)}%),hsl(${((c.h+25)%360).toFixed(0)},${c.s.toFixed(0)}%,${Math.min(62,c.l+8)}%))">${esc(c.cmd.ini)}</div><div><div class="nm">${esc(c.cmd.name)}</div><small>${esc((c.cmd.title?c.cmd.title+' · ':'')+c.n)}${c.cmd.own?' · własny dowódca':''}</small></div></div>`;
 const canInv=c=>G.phase=='play'&&c.owner&&c.owner===G.players[G.cur];
 const invBox=p=>{if(!canInv(p.c))return'';const e=ecoP(p);if(e==null)return'';
- return`<div class="inv"><h4>Inwestuj w ekonomię prowincji · skarb ${gold(p.c.money)}</h4><div class="g">${LV.map((l,k)=>{const cost=invCost(p,k),ok=p.c.money>=cost&&e<99.9;return`<button data-inv="${k}" ${ok?'':'disabled'}>+${f1(l[1])} pkt<small>koszt ${gold(cost)}</small></button>`}).join('')}</div></div>`};
+ return`<div class="inv"><h4>Inwestuj w ekonomię prowincji · skarb ${gold(p.c.money)}</h4><div class="g">${LV.map((l,k)=>{const cost=invCost(p,k),ok=p.c.money>=cost;return`<button data-inv="${k}" ${ok?'':'disabled'}>+${f1(l[1])} pkt<small>koszt ${gold(cost)}</small></button>`}).join('')}</div></div>`};
 const bldBox=p=>{const own=canInv(p.c);
  const rows=BD.map((d,i)=>{const l=L(p,i),cost=bCost(p,i),coastOK=i!==5||canBuildPort(p),ok=own&&l<(BD[i].mx||10)&&p.c.money>=cost&&p.c.ap>=1&&coastOK;
   return`<div class="bd" data-tip="${esc(i===5&&!coastOK?'Port można budować wyłącznie w prowincji z dostępem do morza.':'Koszt = baza '+d.base+' × skala kraju '+r2(p.c.scale)+' × (poziom+1)^1,5 = '+gold(cost))}"><span class="bi">${d.ic}</span><div class="bn"><b>${d.n}</b> <span class="lv">${l}/${BD[i].mx||10}</span><small>${d.fx}${i===5&&!coastOK?' · 🚫 Brak dostępu do morza':bIdle(p,i,own)}</small></div>${own?`<button data-bld="${i}" ${ok?'':'disabled'}>${l>=(BD[i].mx||10)?'Maks':'+1<small>'+gold(cost)+' · 1 ⚡</small>'}</button>`:''}</div>`}).join('');
@@ -1333,7 +1353,7 @@ cv.onpointerdown=e=>{if(e.pointerType==='mouse'&&e.button!==0)return;cv.setPoint
 cv.onpointermove=e=>{if(!ptr.has(e.pointerId)){if(e.pointerType==='mouse'&&G.phase==='play'){const q=pick(e.offsetX,e.offsetY),hc=q&&q.t==='p'?q.c:null;if(hc!==hoverCountry||q!==hoverProv){hoverCountry=hc;hoverProv=q&&q.t==='p'?q:null;sched()}}return}const o=ptr.get(e.pointerId),n=[e.offsetX,e.offsetY];
  if(ptr.size==1){V.tx+=(n[0]-o[0])*1.18;V.ty+=(n[1]-o[1])*1.18;moved+=Math.abs(n[0]-o[0])+Math.abs(n[1]-o[1]);ptr.set(e.pointerId,n);sched()}
  else{ptr.set(e.pointerId,n);const[a,b]=[...ptr.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(d0)zoomAt(d/d0,(a[0]+b[0])/2,(a[1]+b[1])/2);d0=d;moved=99}};
-cv.onpointerup=e=>{cv.style.cursor='grab';if(ptr.size==1&&moved<6&&!G.busy){const pp=pick(e.offsetX,e.offsetY),pl=G.players[G.cur],c=pl&&pl.c;
+cv.onpointerup=e=>{cv.style.cursor='grab';if(ptr.size==1&&moved<6&&!G.busy){const pp=(UB.mapPick&&G.phase==='play')?pickMoveTarget(e.offsetX,e.offsetY):pick(e.offsetX,e.offsetY),pl=G.players[G.cur],c=pl&&pl.c;
  if(scenarioEditor.active&&pp&&pp.t==='p'){const target=scenarioEditor.selected;if((target&&pp.c!==target)||(!target&&pp.c))editorCheckpoint();if(target){if(pp.c!==target){if(pp.c)pp.c.ps=pp.c.ps.filter(q=>q!==pp);pp.c=target;pp.c0=target;pp.col=target.editorColor;target.ps.push(pp);editorRecount();draw();editorPanel();const st=document.getElementById('ec-status');if(st)st.textContent='Przypisano prowincję: '+pp.n+' → '+target.n;}}else{const old=pp.c;if(old)old.ps=old.ps.filter(q=>q!==pp);pp.c=null;pp.col='#657d87';editorRecount();draw();editorPanel();const st=document.getElementById('ec-status');if(st)st.textContent='Usunięto przypisanie prowincji: '+pp.n;}ptr.delete(e.pointerId);d0=0;return}
 
  if(MAP_PICK_FIELD&&pp&&pp.t==='p'){
@@ -1342,7 +1362,7 @@ cv.onpointerup=e=>{cv.style.cursor='grab';if(ptr.size==1&&moved<6&&!G.busy){cons
   else{MODAL.classList.remove('hide');MAP_PICK_FIELD=null;toast('Tego kraju nie można wybrać w tej ofercie')}
   ptr.delete(e.pointerId);d0=0;return;
  }
- if(UB.mapPick&&G.phase==='play'&&c&&pp&&pp.t==='p'){const u=c.units.find(x=>x.id===UB.selectedUnitId);if(u){uMove(c,u,pp);UB.mapPick=false;return}}
+ if(UB.mapPick&&G.phase==='play'&&c&&pp&&(pp.t==='p'||pp.t==='s')){const u=c.units.find(x=>x.id===UB.selectedUnitId);if(u){uMove(c,u,pp);UB.mapPick=false;return}}
  if(G.pc)peaceClick(pp);else show(pp)}ptr.delete(e.pointerId);d0=0};
 cv.onpointercancel=e=>{cv.style.cursor='grab';ptr.delete(e.pointerId)};
 cv.onwheel=e=>{e.preventDefault();zoomAt(e.deltaY<0?1.25:.8,e.offsetX,e.offsetY)};
@@ -1476,7 +1496,7 @@ function renderUbar(){
  const provOpts=free.map(q=>`<option value="${PV.indexOf(q)}" ${q===rp?'selected':''}>${esc(q.n)} · ${fm(q.pop||0)} os.</option>`).join('');
  const ul=c.units.map(u=>{
   const mates=c.units.filter(x=>x!==u&&x.p===u.p),chosen=UB.selectedUnitId===u.id;
-  return`<div class="un ${chosen?'on':''}" data-uid="${u.id}" style="${chosen?'background:rgba(201,162,74,.22);border-radius:7px;padding:6px':''}"><span class="bi">🪖</span><div class="bn"><b>${esc(u.name)}</b> <span class="lv">poz. ${u.lv.toFixed(1)}</span><small>${fm(u.n)} żołn. · moc ${fm(Math.round(unitPw(u)))} · ${esc(u.p.n)}${u.leader?' · '+esc(u.leader.name)+' (S'+u.leader.str+'/I'+u.leader.intel+'/L'+u.leader.loyal+')':''}${u.dest&&u.dest!==u.p?' → '+esc(u.dest.n):''}</small></div><button data-umap title="Wybierz cel klikając prowincję na mapie">${chosen&&UB.mapPick?'Wskaż cel…':'Przenieś'}</button><button data-usplit title="Podziel oddział">Podziel</button><button data-udis>Zwolnij</button>${mates.length?`<button data-umerge title="Połącz z oddziałami w tej samej prowincji">Połącz (${mates.length+1})</button>`:''}${u.dest&&u.dest!==u.p?'<button data-ustop title="Anuluj marsz">⏹</button>':''}</div>`}).join('')||'<div class="hint">Brak oddziałów. Zrekrutuj pierwszy powyżej.</div>';
+  return`<div class="un ${chosen?'on':''}" data-uid="${u.id}" style="${chosen?'background:rgba(201,162,74,.22);border-radius:7px;padding:6px':''}"><span class="bi">🪖</span><div class="bn"><b>${esc(u.name)}</b> <span class="lv">poz. ${u.lv.toFixed(1)}</span><small>${fm(u.n)} żołn. · moc ${fm(Math.round(unitPw(u)))} · ${esc(u.p.n)}${u.leader?' · '+esc(u.leader.name)+' (S'+u.leader.str+'/I'+u.leader.intel+'/L'+u.leader.loyal+')':''}${u.dest&&u.dest!==u.p?' → '+esc(u.dest.n):''}</small></div><button data-umap title="Wybierz cel klikając prowincję lądową lub akwen na mapie">${chosen&&UB.mapPick?'Wskaż cel…':'Przenieś'}</button><button data-usplit title="Podziel oddział">Podziel</button><button data-udis>Zwolnij</button>${mates.length?`<button data-umerge title="Połącz z oddziałami w tej samej prowincji">Połącz (${mates.length+1})</button>`:''}${u.dest&&u.dest!==u.p?'<button data-ustop title="Anuluj marsz">⏹</button>':''}</div>`}).join('')||'<div class="hint">Brak oddziałów. Zrekrutuj pierwszy powyżej.</div>';
  UBAR.classList.add('on');UBAR.classList.toggle('min',!UB.open);
  UBAR.innerHTML=`<div class="uh" data-ut><span>🪖 Wojsko · ${fm(soldiers(c))} żołn. · ⚡ ${g1(c.ap)}</span><b>${UB.open?'▾':'▴'}</b></div><div class="ub"><div class="inv" style="margin-bottom:8px"><h4>Rekrutacja · ${g1(recCost(c))} 🪙 / żołnierz</h4>${free.length?`<div class="row"><select data-up style="flex:1;max-width:none">${provOpts}</select></div><div class="row"><input data-un type="number" min="1" step="100" value="${esc(UB.n)}" style="flex:1;width:auto"><button data-uq="100">100</button><button data-uq="1000">1000</button><button data-uq="max">Maks</button></div><input data-unm maxlength="30" placeholder="Nazwa oddziału (opcjonalnie)" value="${esc(UB.name)}" style="width:100%;margin-bottom:6px"><div class="hint" id="ubi" style="font-size:12px;margin-bottom:6px">${recInfo(c,rp)}</div><div class="row"><button class="btn" data-urec data-quality="0" style="flex:1">Rekrutuj zwykłych</button><button class="btn alt" data-urec data-quality="2.5" style="flex:1">🎖️ Elitarni ×2</button></div>`:'<div class="hint">Wszystkie prowincje są okupowane – nie możesz rekrutować.</div>'}</div><div class="inv" style="margin-bottom:8px"><h4>Wsparcie wojenne</h4><button class="btn alt" data-callhelp style="width:100%">📯 Poproś sojuszników i wasali o pomoc</button><div class="hint" style="margin-top:5px">Wezwani sojusznicy dołączą do wojny i wyślą dostępne oddziały na front.</div></div><div class="inv" style="margin-bottom:0"><h4>Oddziały · 1 prowincja / turę · limit transportu: ludność / 10 000 × technologia</h4>${ul}</div></div>`;
  const nb=UBAR.querySelector('.ub');if(nb)nb.scrollTop=sc}
@@ -1525,7 +1545,7 @@ UBAR.addEventListener('click',e=>{
  else if(b.dataset.usplit!==undefined){if(u.n<2){toast('Oddział jest zbyt mały, aby go podzielić');return}
   const v=prompt('Ilu żołnierzy przenieść do nowego oddziału? (1–'+(u.n-1)+')',Math.floor(u.n/2));if(v===null)return;const k=Math.floor(+v);if(!(k>=1&&k<u.n)){toast('Podaj poprawną liczbę żołnierzy');return}
   if(c.units.length>=30){toast('Limit 30 oddziałów w kraju');return}u.n-=k;c.units.push({id:++G.uid,name:u.name+' · II',n:k,lv:u.lv,p:u.p,leader:u.leader});sfx('split');toast('Podzielono oddział na '+fm(u.n)+' i '+fm(k)+' żołnierzy');uRef()}
- else if(b.dataset.umap!==undefined){UB.selectedUnitId=u.id;UB.mapPick=true;toast('Kliknij docelową prowincję na mapie');renderUbar()}
+ else if(b.dataset.umap!==undefined){UB.selectedUnitId=u.id;UB.mapPick=true;toast('Kliknij docelową prowincję lub akwen na mapie');renderUbar()}
  else if(b.dataset.umerge!==undefined){const mates=c.units.filter(x=>x!==u&&x.p===u.p);if(!mates.length)return;
   let tn=u.n,tl=u.n*u.lv;for(const m of mates){tn+=m.n;tl+=m.n*m.lv;m.n=0}u.n=tn;u.lv=Math.min(9.9,tl/tn);u.dest=null;
   c.units=c.units.filter(x=>x.n>0);toast('Połączono oddziały: '+u.name+' ('+fm(u.n)+')');uRef()}
@@ -1759,9 +1779,9 @@ resize();requestAnimationFrame(loop);fit(-170,-83,180,58);
  function startMusic(){try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;musicCtx=new AC();if(musicCtx.state==='suspended')musicCtx.resume();musicOn=true;musicStep=0;
   // Oryginalna, skoczna ścieżka w klimacie historycznej gry strategicznej:
   // żywy marszowy puls, sprężysty bas i folkowa melodia (bez kopiowania utworów z AOH2).
-  const bpm=116,beat=60000/bpm/2,roots=[146.83,174.61,130.81,196.00],
+  const bpm=122,beat=60000/bpm/2,roots=[146.83,174.61,130.81,196.00],
    // D-moll / F-dur – rytmiczna, łatwo wpadająca w ucho melodia.
-   melody=[0,7,10,7,5,7,12,10, 7,5,3,5,7,10,7,5, 0,7,12,14,12,10,7,10, 5,7,10,7,5,3,2,5],
+   melody=[0,7,10,12,10,7,5,7, 3,7,10,14,12,10,7,5, 0,7,12,15,14,12,10,7, 5,9,12,10,7,5,3,2],
    chordNotes=[[1,1.25,1.5],[1,1.2,1.5],[1,1.25,1.5],[1,1.25,1.5]];
   const tone=(freq,dur,vol,type,when,filter=2600,attack=.012)=>{if(!musicCtx||musicCtx.state==='closed')return;const o=musicCtx.createOscillator(),g=musicCtx.createGain(),lp=musicCtx.createBiquadFilter();o.type=type;o.frequency.setValueAtTime(freq,when);lp.type='lowpass';lp.frequency.value=filter;g.gain.setValueAtTime(.0001,when);g.gain.linearRampToValueAtTime(vol,when+attack);g.gain.exponentialRampToValueAtTime(.0001,when+dur);o.connect(lp);lp.connect(g);g.connect(musicCtx.destination);o.start(when);o.stop(when+dur+.025)};
   const noise=(dur,vol,when,cut=5000)=>{const n=Math.max(1,Math.floor(musicCtx.sampleRate*dur)),buf=musicCtx.createBuffer(1,n,musicCtx.sampleRate),a=buf.getChannelData(0);for(let j=0;j<n;j++)a[j]=(Math.random()*2-1)*(1-j/n);const src=musicCtx.createBufferSource(),f=musicCtx.createBiquadFilter(),g=musicCtx.createGain();src.buffer=buf;f.type='highpass';f.frequency.value=cut;g.gain.setValueAtTime(vol,when);g.gain.exponentialRampToValueAtTime(.0001,when+dur);src.connect(f);f.connect(g);g.connect(musicCtx.destination);src.start(when);src.stop(when+dur)};
@@ -2554,8 +2574,8 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
  function stepLife(dt,T,s){
   if(!FX.life)return;
   if(T>nextWhale&&!document.hidden&&s>.5){nextWhale=T+rnd(20000,38000);if(WH.length<2)spawnWhale(s)}
-  stepWhales(dt,s);stepShips(dt,T,s);stepUfo(dt,T)}
- function drawLife(s,T){const g=OX;drawShips(g,s,T);drawWhales(g,s,T)}
+  stepWhales(dt,s);stepUfo(dt,T)}
+ function drawLife(s,T){const g=OX;drawWhales(g,s,T)}
  function drawSky(g,s,T){if(!FX.life)return;drawAurora(g,s,T)}
  FX._spawn={whale:()=>spawnWhale(V.s),ufo:()=>{if(!UF)spawnUfo()},ships:()=>SHP.length};
 
@@ -2605,7 +2625,7 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
   if(!down||e.target!==cv){down=null;return}const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y);down=null;if(moved>6)return;
   const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
   try{
-   if(ufoClick(x,y)||whaleClick(x,y)||creatureClick(x,y)||shipClick(x,y)||birdClick(x,y))return;
+   if(ufoClick(x,y)||whaleClick(x,y)||creatureClick(x,y)||birdClick(x,y))return;
    let hue=null;try{const p=pick(x,y);if(p&&p.t==='p'&&p.c)hue=Math.round(p.c.h)}catch(_){}
    if(FX.particles)starBurst(x,y,8,hue);play('click',.8,60)}catch(err){console.error(err)}},true);
 
@@ -2628,5 +2648,528 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
   }catch(_){}};
 })();
 
+
+/* ===== SUPER WARS FX: aktualizacja morska i sterowanie oddziałami ===== */
+(function(){
+ try{
+  /* Wybór prowincji automatycznie zaznacza oddział stojący w tej prowincji. */
+  const _show=show;
+  show=function(p,open){
+   _show(p,open);
+   try{
+    if(p&&p.t==='p'&&p.c&&p.c.units){
+     const pl=G.players&&G.players[G.cur],mine=pl&&pl.c===p.c;
+     if(mine){
+      const u=p.c.units.find(x=>x.p===p&&!x.dest)||p.c.units.find(x=>x.p===p);
+      if(u){UB.selectedUnitId=u.id;UB.open=true;renderUbar()}
+     }
+    }
+   }catch(_){}
+  };
+  /* Spacja podczas animacji rozstrzyga wszystkie pozostałe bitwy od razu,
+     a poza bitwą zachowuje dotychczasową funkcję kończenia tury. */
+  addEventListener('keydown',e=>{
+   if(e.code!=='Space'||e.repeat)return;
+   const t=e.target,tg=t&&t.tagName;
+   if(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT'||(t&&t.isContentEditable))return;
+   if(G&&G.busy){e.preventDefault();e.stopImmediatePropagation();SKIP=1;return}
+  },true);
+  /* Boty budują porty od czasu do czasu, jeśli mają wybrzeże i wolne zasoby. */
+  const _botTurn=botTurn;
+  botTurn=function(c,done){
+   _botTurn(c,done);
+   try{
+    if(!c||c.owner||!c.ps.length||c.ap<1||c.money<=0||Math.random()>.34)return;
+    const coastal=c.ps.filter(p=>canBuildPort(p)&&L(p,5)<(BD[5].mx||10));
+    if(!coastal.length)return;
+    coastal.sort((a,b)=>L(a,5)-L(b,5));
+    const p=coastal[0],cost=bCost(p,5);
+    if(c.money>=cost){c.money=r1(c.money-cost);c.ap=r2(c.ap-1);p.b[5]++;(p.bt||(p.bt=BD.map(()=>1)))[5]=G.turn;c.lastAct='Tura '+done+': Port → '+p.n}
+   }catch(_){}
+  };
+  /* Mniej nieuzasadnionych wojen: boty deklarują wojnę głównie państwom
+     mającym rzeczywistą granicę lądową. */
+  const _botWar=botWar;
+  botWar=function(){
+   const oldAgg=G.aggression;
+   try{G.aggression=Math.max(.5,(G.aggression||2)*.72);_botWar()}
+   finally{G.aggression=oldAgg}
+  };
+ }catch(err){console.warn('SW FX patch',err)}
+
+ /* Dodatkowe gatunki w oceanach i kolejnych akwenach. */
+ GROUPS.push(
+  {kind:'seal',names:['Ocean Atlantycki','Morze Północne','Morze Norweskie','Morze Barentsa','Morze Labradorskie'],n:7,K:1.55,min:20,max:66,speed:.29,snd:'seal'},
+  {kind:'seal',names:['Morze Północne','Morze Norweskie','Morze Ochockie','Morze Beringa'],n:5,K:1.45,min:17,max:54,speed:.31,snd:'seal'},
+  {kind:'manatee',names:['Zatoka Meksykańska','Morze Karaibskie','Morze Czerwone'],n:5,K:2.1,min:19,max:62,speed:.38,snd:'manatee'},
+  {kind:'manatee',names:['Ocean Spokojny','Ocean Indyjski','Ocean Atlantycki','Morze Arabskie','Morze Południowochińskie','Morze Japońskie','Morze Koralowe','Morze Filipińskie','Morze Wschodniochińskie','Morze Andamańskie'],n:10,K:2.0,min:20,max:65,speed:.42,snd:'manatee'},
+  {kind:'duck',names:['Morze Czarne','Morze Azowskie','Morze Marmara','Morze Adriatyckie','Morze Egejskie'],n:0,K:1.0,min:14,max:42,speed:.4,snd:'quack'}
+ );
+ /* Usunięcie statków będących wyłącznie dekoracją. Floty/oddziały wojskowe są niezależną warstwą. */
+ SHP.length=0;stepShips=function(){};drawShips=function(){};shipClick=function(){return false};drawLife=function(s,T){const g=OX;drawWhales(g,s,T)};
+
+})();
+
 </script>
-</body></html>
+
+<script>
+/* Super Wars FX – transport wojsk między portami oraz pełne wyłączenie dekoracyjnych żaglówek. */
+(()=>{
+ try{
+  const _stepUnitSW=stepUnit;
+  const seaPortLink=(a,b)=>{
+   if(!a||!b||a===b||!canBuildPort(a)||!canBuildPort(b)||L(a,5)<1||L(b,5)<1)return false;
+   // Oba porty muszą stykać się z tym samym akwenem na mapie.
+   return SV.some(sea=>{
+    const z=sea.bb;
+    const touches=p=>p.bb[0]<=z[2]+.08&&p.bb[2]>=z[0]-.08&&p.bb[1]<=z[3]+.08&&p.bb[3]>=z[1]-.08;
+    return touches(a)&&touches(b);
+   });
+  };
+  stepUnit=function(c,u,used){
+   const d=u&&u.dest,p0=u&&u.p;
+   if(d&&p0&&d!==p0&&!adj(p0,d)&&seaPortLink(p0,d)){
+    if(!canEnter(c,d)){u.dest=null;toast('Transport morski: nie możesz wkroczyć do tej prowincji.');return}
+    // Zaokrętowanie w porcie źródłowym i wyokrętowanie w porcie docelowym.
+    u.from=p0;u.moveAt=performance.now();u.p=d;u.dest=null;u.seaTransport=false;
+    return;
+   }
+   return _stepUnitSW(c,u,used);
+  };
+  // Informacja w panelu: daleki ruch port–port jest transportem morskim.
+  const oldMove=uMove;
+  uMove=function(c,u,q){
+   if(q&&u&&u.p&&q!==u.p&&!adj(u.p,q)&&seaPortLink(u.p,q)){
+    if(!canEnter(c,q)){toast('Nie możesz tam wejść – najpierw wypowiedz wojnę: '+holder(q).n);return}
+    if(c.ap<1){toast('Brak punktów akcji');return}
+    c.ap=r2(c.ap-1);u.dest=q;u.seaTransport=true;UB.mapPick=false;
+    toast('⚓ '+u.name+' wyrusza z portu '+u.p.n+' do portu '+q.n);uRef();return;
+   }
+   return oldMove(c,u,q);
+  };
+ }catch(e){console.warn('SW transport patch',e)}
+})();
+</script>
+
+
+<script>
+/* SW FIX 2: transport z jednego portu na dowolne dostępne wybrzeże + usunięcie żaglówek dekoracyjnych. */
+(()=>{
+  try{
+    // Łączność morska: port jest wymagany tylko w prowincji wypłynięcia.
+    // Prowincja docelowa musi mieć dostęp do tego samego akwenu, ale nie musi mieć portu.
+    const swTouchesSea=(p,sea)=>{
+      if(!p||!sea||!p.bb||!sea.bb)return false;
+      const a=p.bb,b=sea.bb;
+      return a[0]<=b[2]+.08&&a[2]>=b[0]-.08&&a[1]<=b[3]+.08&&a[3]>=b[1]-.08;
+    };
+    const swSeaRoute=(from,to)=>{
+      if(!from||!to||from===to||!canBuildPort(from)||L(from,5)<1||!canBuildPort(to))return false;
+      return SV.some(sea=>swTouchesSea(from,sea)&&swTouchesSea(to,sea));
+    };
+    const swOldMove=uMove;
+    uMove=function(c,u,q){
+      if(q&&u&&u.p&&q!==u.p&&!adj(u.p,q)&&swSeaRoute(u.p,q)){
+        if(!canEnter(c,q)){toast('Nie możesz tam wejść – najpierw wypowiedz wojnę: '+holder(q).n);return}
+        if(c.ap<1){toast('Brak punktów akcji');return}
+        c.ap=r2(c.ap-1);
+        u.dest=q;u.seaTransport=true;UB.mapPick=false;
+        toast('⚓ '+u.name+' wypływa z portu '+u.p.n+' i ląduje na wybrzeżu '+q.n+' (port docelowy nie jest potrzebny).');
+        uRef();return;
+      }
+      return swOldMove(c,u,q);
+    };
+    const swOldStep=stepUnit;
+    stepUnit=function(c,u,used){
+      const dest=u&&u.dest,origin=u&&u.p;
+      if(dest&&origin&&dest!==origin&&!adj(origin,dest)&&u.seaTransport&&swSeaRoute(origin,dest)){
+        if(!canEnter(c,dest)){u.dest=null;u.seaTransport=false;toast('Nie możesz wkroczyć do tej prowincji.');return}
+        u.from=origin;u.moveAt=performance.now();u.p=dest;u.dest=null;u.seaTransport=false;
+        return;
+      }
+      return swOldStep(c,u,used);
+    };
+
+    // Wyłączamy generator oraz wszystkie renderery/clickery dekoracyjnych żaglówek.
+    SHP.length=0;
+    stepShips=function(){SHP.length=0};
+    drawShips=function(){};
+    shipClick=function(){return false};
+    const swOldLifeStep=stepLife;
+    stepLife=function(dt,T,scale){
+      if(!FX.life)return;
+      if(T>nextWhale&&!document.hidden&&scale>.5){
+        nextWhale=T+rnd(20000,38000);
+        if(WH.length<2)spawnWhale(scale);
+      }
+      stepWhales(dt,scale);
+      stepUfo(dt,T);
+      SHP.length=0;
+    };
+    drawLife=function(scale,T){
+      const g=OX;
+      drawWhales(g,scale,T);
+      SHP.length=0;
+    };
+  }catch(err){console.warn('SW FIX 2',err)}
+})();
+</script>
+
+
+<script>
+/* SW FIX 3: click on sea area to embark; one source port only. */
+(()=>{
+ try{
+  const touches=(a,b)=>{
+   if(!a||!b||!a.bb||!b.bb)return false;
+   const A=a.bb,B=b.bb;
+   if(!(A[0]<=B[2]+.12&&A[2]>=B[0]-.12&&A[1]<=B[3]+.12&&A[3]>=B[1]-.12))return false;
+   // Require actual overlap of sea polygon and land boundary vicinity.
+   return true;
+  };
+  const seaFor=(p)=>SV.filter(sea=>touches(p,sea));
+  const sourceHasPort=p=>!!p&&p.t==='p'&&canBuildPort(p)&&L(p,5)>0;
+  const oldMove=uMove;
+  uMove=function(c,u,target){
+   if(!c||!u||!target)return oldMove(c,u,target);
+   // Embark: click a sea region connected to the province containing a port.
+   if(target.t==='s'&&u.p&&u.p.t==='p'&&sourceHasPort(u.p)&&seaFor(u.p).includes(target)){
+    if(c.ap<1){toast('Brak punktów akcji');return}
+    c.ap=r2(c.ap-1);u.from=u.p;u.moveAt=performance.now();u.p=target;u.dest=null;u.seaTransport=true;UB.mapPick=false;
+    toast('⚓ '+u.name+' wypływa na '+target.n+'.');uRef();return;
+   }
+   // Disembark: click a coastal land province touching the sea unit occupies.
+   if(u.p&&u.p.t==='s'&&target.t==='p'&&seaFor(target).includes(u.p)){
+    if(!canEnter(c,target)){toast('Nie możesz tam wejść – najpierw wypowiedz wojnę: '+holder(target).n);return}
+    if(c.ap<1){toast('Brak punktów akcji');return}
+    c.ap=r2(c.ap-1);u.from=u.p;u.moveAt=performance.now();u.p=target;u.dest=null;u.seaTransport=false;UB.mapPick=false;
+    toast('⚓ '+u.name+' wysiada w prowincji '+target.n+'.');uRef();return;
+   }
+   return oldMove(c,u,target);
+  };
+  // The map click handler previously accepted only land provinces. Accept sea areas
+  // while a unit is selected for map movement.
+  const marker="if(UB.mapPick&&G.phase==='play'&&c&&pp&&pp.t==='p'){";
+  if(s.includes(marker)){
+   s=s.replace(marker,"if(UB.mapPick&&G.phase==='play'&&c&&pp&&(pp.t==='p'||pp.t==='s')){");
+  }
+ }catch(e){console.warn('SW FIX 3',e)}
+})();
+</script>
+
+
+<script>
+/* SUPER WARS – ruch morski turami + łódki + ekonomia bez limitu */
+(()=>{
+ try{
+  const oldMove=uMove, oldStep=stepUnit, oldDraw=draw;
+  const seaDist=(a,b)=>{const x=mid(a),y=mid(b);return Math.hypot((x[0]-y[0])*Math.cos((x[1]+y[1])*Math.PI/360),x[1]-y[1])};
+  const seaNeighbors=a=>SV.filter(q=>q!==a&&adj(a,q));
+  uMove=function(c,u,target){
+   if(!c||!u||!u.p||!target)return oldMove(c,u,target);
+   if(u.p.t==='s'){
+    if(target.t==='p'){
+     if(!canEnter(c,target)){toast('Nie możesz tam wejść – najpierw wypowiedz wojnę: '+holder(target).n);return}
+     if(!seasNear(target).includes(u.p) && !seaNeighbors(u.p).some(z=>seasNear(target).includes(z))){
+      toast('Ta prowincja jest zbyt daleko od obecnego akwenu. Wybierz kolejny akwen.');return;
+     }
+    }else if(target.t==='s'&&target!==u.p&&!adj(u.p,target)){
+     toast('Wybierz sąsiedni akwen – każdy akwen to jedna tura.');return;
+    }
+    if(target===u.p){toast('Armia już znajduje się na tym akwenie.');return}
+    if(c.ap<1){toast('Brak punktów akcji');return}
+    c.ap=r2(c.ap-1);u.dest=target;u.onShip=true;u.seaTransport=target.t==='p';UB.mapPick=false;
+    toast('⚓ '+u.name+' płynie w stronę '+target.n+'.');uRef();return;
+   }
+   return oldMove(c,u,target);
+  };
+  stepUnit=function(c,u,used){
+   if(u&&u.p&&u.p.t==='s'){
+    const d=u.dest;
+    if(!d){return}
+    if(d.t==='s'&&d===u.p){u.dest=null;return}
+    if(d.t==='p'&&seasNear(d).includes(u.p)){
+     if(!canEnter(c,d)){u.dest=null;u.onShip=false;u.seaTransport=false;return}
+     u.from=u.p;u.moveAt=performance.now();u.p=d;u.dest=null;u.onShip=false;u.seaTransport=false;
+     toast('⚓ '+u.name+' dopływa i wysiada w prowincji '+d.n+'.');return;
+    }
+    const goal=d.t==='s'?d:(d.t==='p'?seasNear(d).sort((a,b)=>seaDist(a,d)-seaDist(b,d))[0]:null);
+    const opts=seaNeighbors(u.p);
+    let next=opts.filter(q=>!used||!used.has(q)).sort((a,b)=>seaDist(a,goal)-seaDist(b,goal))[0];
+    if(!next){toast('Brak sąsiedniego akwenu na trasie.');u.dest=null;return}
+    u.from=u.p;u.moveAt=performance.now();u.p=next;u.onShip=true;
+    if(used)used.add(next);
+    if(d.t==='s'&&next===d)u.dest=null;
+    return;
+   }
+   return oldStep(c,u,used);
+  };
+  draw=function(){
+   oldDraw();
+   const sc=V.s;
+   for(const c of C)for(const u of c.units||[])if(u.p&&u.p.t==='s'&&u.onShip){
+    const m=mid(u.p);cx.save();cx.translate(m[0],m[1]);cx.font=(15/sc)+'px "Segoe UI Emoji",sans-serif';cx.textAlign='center';cx.textBaseline='middle';
+    cx.shadowColor='rgba(0,0,0,.65)';cx.shadowBlur=5/sc;cx.fillText('🚣',0,0);cx.restore();
+   }
+  };
+  // W panelu widoczny status jednostki na wodzie.
+  const oldRenderUbar=renderUbar;
+  renderUbar=function(){oldRenderUbar();try{for(const row of UBAR.querySelectorAll('[data-uid]')){const u=G.players[G.cur]?.c.units.find(x=>x.id==row.dataset.uid);if(u&&u.p?.t==='s'){const small=row.querySelector('.bn small');if(small&&!small.textContent.includes('na morzu'))small.textContent+=' · 🚣 na morzu'}}}catch(_){}};
+ }catch(e){console.warn('SW sea turn patch',e)}
+})();
+</script>
+
+</body>
+<script>
+/* SUPER WARS – automatyczne dojście do najbliższego portu i rejs */
+(()=>{
+ try{
+  // Sprawdzaj rzeczywisty kontakt linii brzegowej z konkretnym akwenem.
+  // Same prostokąty bb są niewystarczające: mogą nachodzić na siebie,
+  // mimo że prowincja wcale nie graniczy z danym morzem.
+  const seaTouches=(p,sea)=>{
+   if(!p||!sea||!p.bb||!sea.bb||!sea.path)return false;
+   const a=p.bb,b=sea.bb;
+   if(!(a[0]<=b[2]+.12&&a[2]>=b[0]-.12&&a[1]<=b[3]+.12&&a[3]>=b[1]-.12))return false;
+   const pi=PV.indexOf(p),raw=D.P[pi],rings=raw&&raw[4]||[];
+   if(!rings.length)return false;
+   let found=false;
+   cx.save();cx.setTransform(1,0,0,1,0,0);
+   outer:for(const ring of rings){
+    if(!ring||ring.length<4)continue;
+    let x=0,y=0,pts=[];
+    for(let j=0;j<ring.length;j+=2){x+=ring[j];y+=ring[j+1];pts.push([x/SC,-y/SC])}
+    for(let j=0;j<pts.length;j++){
+     const A=pts[j],B=pts[(j+1)%pts.length],dx=B[0]-A[0],dy=B[1]-A[1],len=Math.hypot(dx,dy);
+     if(len<.005)continue;
+     const mx=(A[0]+B[0])*.5,my=(A[1]+B[1])*.5,nx=-dy/len*.025,ny=dx/len*.025;
+     for(const side of [-1,1]){
+      const sx=mx+nx*side,sy=my+ny*side;
+      if(sx<b[0]-.01||sx>b[2]+.01||sy<b[1]-.01||sy>b[3]+.01)continue;
+      if(cx.isPointInPath(sea.path,sx,sy,'evenodd')){found=true;break outer}
+     }
+    }
+   }
+   cx.restore();
+   return found;
+  };
+  const seasNear=p=>SV.filter(sea=>seaTouches(p,sea));
+  const midSW=p=>{const b=p.bb;return [(b[0]+b[2])/2,(b[1]+b[3])/2]};
+  const distanceSW=(a,b)=>{const x=midSW(a),y=midSW(b);return Math.hypot((x[0]-y[0])*Math.cos((x[1]+y[1])*Math.PI/360),x[1]-y[1])};
+  const validPort=(p,c)=>!!p&&p.t==='p'&&p.c===c&&canBuildPort(p)&&L(p,5)>0;
+  const nearestPortFor=(c,unit,target)=>{
+   const targetSeas=target.t==='s'?[target]:seasNear(target);
+   const ports=(c.ps||[]).filter(p=>validPort(p,c)&&seasNear(p).some(sea=>targetSeas.includes(sea)));
+   ports.sort((a,b)=>distanceSW(unit.p,a)-distanceSW(unit.p,b));
+   return ports[0]||null;
+  };
+  const oldMove=uMove;
+  uMove=function(c,u,target){
+   if(!c||!u||!u.p||!target)return oldMove(c,u,target);
+   // Kliknięcie na morze/ocean albo odległą prowincję przybrzeżną:
+   // najpierw dojście do najbliższego portu, następnie automatyczne zaokrętowanie.
+   if(target.t==='s'||(target.t==='p'&&!adj(u.p,target))){
+    const port=nearestPortFor(c,u,target);
+    if(port){
+     if(!canEnter(c,target)&&target.t==='p'){
+      toast('Nie możesz wkroczyć do tej prowincji – najpierw wypowiedz wojnę: '+holder(target).n);return;
+     }
+     if(c.ap<1){toast('Brak punktów akcji');return}
+     c.ap=r2(c.ap-1);
+     u.seaOrder={target:target,port:port};
+     u.seaTransport=false;
+     u.dest=port;
+     UB.mapPick=false;
+     toast('⚓ '+u.name+' maszeruje do najbliższego portu: '+port.n+'. Stamtąd wyruszy na morze.');
+     uRef();return;
+    }
+   }
+   return oldMove(c,u,target);
+  };
+  const oldStep=stepUnit;
+  stepUnit=function(c,u,used){
+   const order=u&&u.seaOrder;
+   if(order&&u.p===order.port){
+    const target=order.target;
+    // Jednostka dociera do portu i rozpoczyna rejs w kierunku wskazanego akwenu.
+    if(target.t==='s'){
+     u.from=u.p;u.moveAt=performance.now();u.p=target;u.dest=null;u.seaOrder=null;u.seaTransport=false;
+     toast('⚓ '+u.name+' wypływa z portu '+order.port.n+' na '+target.n+'.');return;
+    }
+    const candidates=seasNear(target).filter(sea=>seasNear(order.port).includes(sea));
+    if(candidates.length){
+     const sea=candidates.sort((a,b)=>distanceSW(order.port,a)-distanceSW(order.port,b))[0];
+     u.from=u.p;u.moveAt=performance.now();u.p=sea;u.dest=target;u.seaTransport=true;u.seaOrder=null;
+     toast('⚓ '+u.name+' wypływa z portu '+order.port.n+' w stronę '+target.n+'.');return;
+    }
+    u.seaOrder=null;u.dest=null;toast('Nie znaleziono połączenia morskiego do tej prowincji.');return;
+   }
+   // Gdy oddział jest na morzu, kończy rejs w wybranej prowincji przybrzeżnej.
+   if(u&&u.p&&u.p.t==='s'&&u.seaTransport&&u.dest&&u.dest.t==='p'){
+    const target=u.dest;
+    if(seasNear(target).includes(u.p)){
+     if(!canEnter(c,target)){u.dest=null;u.seaTransport=false;toast('Nie możesz wkroczyć do tej prowincji.');return}
+     u.from=u.p;u.moveAt=performance.now();u.p=target;u.dest=null;u.seaTransport=false;
+     toast('⚓ '+u.name+' dociera do prowincji '+target.n+'.');return;
+    }
+   }
+   return oldStep(c,u,used);
+  };
+ }catch(e){console.warn('SW automatyczny transport morski',e)}
+})();
+</script>
+
+
+<script>
+/* SUPER WARS – FIX 4: poprawny ruch wojska port → morze → ląd.
+   Naprawia:
+   1) wyjątek "Cannot read properties of undefined (reading 'reb')" – canEnter() było wołane dla akwenu (akwen nie ma pola .c),
+   2) oddział, który szedł do portu, nigdy nie wypływał (rozkaz kasował się po dojściu do portu),
+   3) wyokrętowanie tylko w prowincji faktycznie stykającej się z akwenem (wcześniej wystarczyło nachodzenie prostokątów),
+   4) zwykły ruch lądowy nie jest już kierowany przez port, jeśli da się dojść lądem. */
+(()=>{
+ try{
+  const snCache=new WeakMap();
+  const touchesSea=(p,sea)=>{
+   if(!p||!sea||!p.bb||!sea.bb||!sea.path)return false;
+   const a=p.bb,b=sea.bb;
+   if(!(a[0]<=b[2]+.12&&a[2]>=b[0]-.12&&a[1]<=b[3]+.12&&a[3]>=b[1]-.12))return false;
+   const pi=PV.indexOf(p),raw=D.P[pi],rings=raw&&raw[4]||[];
+   if(!rings.length)return false;
+   let found=false;
+   cx.save();cx.setTransform(1,0,0,1,0,0);
+   outer:for(const ring of rings){
+    if(!ring||ring.length<4)continue;
+    let x=0,y=0;const pts=[];
+    for(let j=0;j<ring.length;j+=2){x+=ring[j];y+=ring[j+1];pts.push([x/SC,-y/SC])}
+    for(let j=0;j<pts.length;j++){
+     const A=pts[j],B=pts[(j+1)%pts.length],dx=B[0]-A[0],dy=B[1]-A[1],len=Math.hypot(dx,dy);
+     if(len<.005)continue;
+     const mx=(A[0]+B[0])*.5,my=(A[1]+B[1])*.5,nx=-dy/len*.025,ny=dx/len*.025;
+     for(const side of [-1,1]){
+      const sx=mx+nx*side,sy=my+ny*side;
+      if(sx<b[0]-.01||sx>b[2]+.01||sy<b[1]-.01||sy>b[3]+.01)continue;
+      if(cx.isPointInPath(sea.path,sx,sy,'evenodd')){found=true;break outer}
+     }
+    }
+   }
+   cx.restore();
+   return found;
+  };
+  // Akweny, z którymi prowincja naprawdę się styka (wynik w pamięci podręcznej – geometria się nie zmienia).
+  const seasNear=p=>{
+   if(!p||p.t!=='p')return [];
+   let r=snCache.get(p);
+   if(!r){r=SV.filter(s=>touchesSea(p,s));snCache.set(p,r)}
+   return r;
+  };
+  const validPort=(p,c)=>!!p&&p.t==='p'&&p.c===c&&!p.occ&&canBuildPort(p)&&L(p,5)>0;
+  // Zbiór prowincji osiągalnych lądem (według tej samej reguły sąsiedztwa co zwykły ruch).
+  const landReach=(c,from)=>{
+   const seen=new Set([from]),st=[from];
+   while(st.length){
+    const p=st.pop();
+    for(const n of PV){if(seen.has(n)||!adj(p,n)||!canEnter(c,n))continue;seen.add(n);st.push(n)}
+   }
+   return seen;
+  };
+  // Najbliższy własny port osiągalny lądem, który styka się z którymś z podanych akwenów.
+  const pickPort=(c,u,seas)=>{
+   const reach=landReach(c,u.p);
+   let best=null,bd=1e18;
+   for(const p of c.ps){
+    if(!validPort(p,c))continue;
+    if(p!==u.p&&!reach.has(p))continue;
+    if(!seasNear(p).some(s=>seas.includes(s)))continue;
+    const d=pdist(u.p,p);
+    if(d<bd){bd=d;best=p}
+   }
+   return best;
+  };
+  // Zaokrętowanie: oddział z portu przechodzi na akwen wspólny z celem.
+  const embark=(c,u,port,target)=>{
+   const goal=target.t==='s'?[target]:seasNear(target);
+   const sea=seasNear(port).find(s=>goal.includes(s));
+   if(!sea){u.dest=null;u.shipOrder=null;toast('Brak połączenia morskiego z tym celem.');return false}
+   u.shipOrder=null;u.from=u.p;u.moveAt=performance.now();u.p=sea;u.onShip=true;
+   u.dest=target.t==='p'?target:null;
+   toast('⚓ '+u.name+' wypływa z portu '+port.n+' na '+sea.n+(target.t==='p'?' w stronę '+target.n:'')+'.');
+   return true;
+  };
+  const orderViaPort=(c,u,port,target)=>{
+   if(c.ap<1){toast('Brak punktów akcji');return}
+   c.ap=r2(c.ap-1);UB.mapPick=false;u.onShip=false;u.shipOrder=null;
+   if(port===u.p){u.dest=null;embark(c,u,port,target)}
+   else{u.dest=port;u.shipOrder={port,target};toast('⚓ '+u.name+' maszeruje do portu '+port.n+(target.t==='s'?', skąd wypłynie na '+target.n:', skąd popłynie do '+target.n)+'.')}
+   uRef();
+  };
+
+  const prevMove=uMove;
+  uMove=function(c,u,target){
+   if(!c||!u||!u.p||!target)return prevMove(c,u,target);
+   const here=u.p;
+   // 1) Oddział jest na morzu: może tylko wylądować w prowincji przybrzeżnej tego akwenu.
+   if(here.t==='s'){
+    if(target===here){toast('Oddział już jest na tym akwenie.');return}
+    if(target.t==='s'){toast('Z akwenu można dopłynąć tylko do przybrzeżnej prowincji (ruch między akwenami nie jest jeszcze obsługiwany).');return}
+    if(!seasNear(target).includes(here)){toast('Wylądować można tylko w prowincji przybrzeżnej nad akwenem: '+here.n);return}
+    if(!canEnter(c,target)){toast('Nie możesz tam wejść – najpierw wypowiedz wojnę: '+holder(target).n);return}
+    if(c.ap<1){toast('Brak punktów akcji');return}
+    c.ap=r2(c.ap-1);u.from=here;u.moveAt=performance.now();u.p=target;u.dest=null;u.onShip=false;u.shipOrder=null;UB.mapPick=false;
+    toast('⚓ '+u.name+' wysiada w prowincji '+target.n+'.');uRef();return;
+   }
+   // 2) Cel: akwen (morze, ocean, zatoka) – potrzebny własny port nad tym akwenem.
+   if(target.t==='s'){
+    const port=pickPort(c,u,[target]);
+    if(!port){toast('Brak portu nad akwenem „'+target.n+'” (albo żaden taki port nie jest osiągalny lądem). Zbuduj port w prowincji przybrzeżnej.');return}
+    orderViaPort(c,u,port,target);return;
+   }
+   // 3) Cel: prowincja lądowa.
+   if(target.t==='p'){
+    u.shipOrder=null;u.onShip=false;
+    if(!canEnter(c,target)){toast('Nie możesz tam wejść – najpierw wypowiedz wojnę: '+holder(target).n);renderUbar();return}
+    const byLand=adj(here,target)||landReach(c,here).has(target);
+    if(!byLand){
+     // Nie da się dojść lądem – spróbuj drogą morską przez port.
+     const goal=seasNear(target);
+     if(goal.length){const port=pickPort(c,u,goal);if(port){orderViaPort(c,u,port,target);return}}
+    }
+    if(c.ap<1){toast('Brak punktów akcji');renderUbar();return}
+    c.ap=r2(c.ap-1);u.dest=target;UB.mapPick=false;toast(u.name+' wyrusza do '+target.n);uRef();return;
+   }
+   return prevMove(c,u,target);
+  };
+
+  const prevStep=stepUnit;
+  stepUnit=function(c,u,used){
+   if(!u||!u.p)return prevStep(c,u,used);
+   // Oddział na morzu: jedyny możliwy ruch to wylądowanie w prowincji docelowej.
+   if(u.p.t==='s'){
+    const d=u.dest;
+    if(d&&d.t==='p'){
+     if(seasNear(d).includes(u.p)){
+      if(!canEnter(c,d)){u.dest=null;toast('Nie możesz wkroczyć do tej prowincji.');return}
+      u.from=u.p;u.moveAt=performance.now();u.p=d;u.dest=null;u.onShip=false;
+      toast('⚓ '+u.name+' dociera do prowincji '+d.n+'.');return;
+     }
+     u.dest=null;toast('Oddział nie może dopłynąć do prowincji '+d.n+'.');return;
+    }
+    u.dest=null;return;
+   }
+   const o=u.shipOrder;
+   if(o){
+    if(u.p===o.port){embark(c,u,o.port,o.target);return}
+    prevStep(c,u,used);
+    if(u.shipOrder===o){
+     if(u.p===o.port)embark(c,u,o.port,o.target);   // dotarł do portu – wypływa od razu (wcześniej rozkaz ginął w tym miejscu)
+     else if(!u.dest){u.shipOrder=null;toast(u.name+' nie dotarł do portu '+o.port.n+'.')}
+    }
+    return;
+   }
+   return prevStep(c,u,used);
+  };
+ }catch(e){console.warn('SW FIX 4',e)}
+})();
+</script>
+
+</html>
