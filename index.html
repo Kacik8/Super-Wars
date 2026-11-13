@@ -2904,14 +2904,7 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
    }
    return oldStep(c,u,used);
   };
-  draw=function(){
-   oldDraw();
-   const sc=V.s;
-   for(const c of C)for(const u of c.units||[])if(u.p&&u.p.t==='s'&&u.onShip){
-    const m=mid(u.p);cx.save();cx.translate(m[0],m[1]);cx.font=(15/sc)+'px "Segoe UI Emoji",sans-serif';cx.textAlign='center';cx.textBaseline='middle';
-    cx.shadowColor='rgba(0,0,0,.65)';cx.shadowBlur=5/sc;cx.fillText('🚣',0,0);cx.restore();
-   }
-  };
+  draw=function(){oldDraw(); /* emoji ship disabled – cartoon on overlay */};
   // W panelu widoczny status jednostki na wodzie.
   const oldRenderUbar=renderUbar;
   renderUbar=function(){oldRenderUbar();try{for(const row of UBAR.querySelectorAll('[data-uid]')){const u=G.players[G.cur]?.c.units.find(x=>x.id==row.dataset.uid);if(u&&u.p?.t==='s'){const small=row.querySelector('.bn small');if(small&&!small.textContent.includes('na morzu'))small.textContent+=' · 🚣 na morzu'}}}catch(_){}};
@@ -3174,10 +3167,9 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
 
 
 <script>
-/* SUPER WARS – FIX 5: rejs z portu = dodatkowa tura, duży kreskówkowy statek, granice prowincji */
+/* SUPER WARS – FIX 6: ruch morski turami, flaga na statku i armii lądowej */
 (()=>{
  try{
-  /* ---- 1) Zaokrętowanie zajmuje osobną turę (bez teleportu) ---- */
   const snCache=new WeakMap();
   const touchesSea=(p,sea)=>{
    if(!p||!sea||!p.bb||!sea.bb||!sea.path)return false;
@@ -3211,6 +3203,9 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
    if(!r){r=SV.filter(s=>touchesSea(p,s));snCache.set(p,r)}
    return r;
   };
+  const midPt=p=>{const b=p.bb;return[(b[0]+b[2])/2,(b[1]+b[3])/2]};
+  const seaDist=(a,b)=>{const x=midPt(a),y=midPt(b);return Math.hypot((x[0]-y[0])*Math.cos((x[1]+y[1])*Math.PI/360),x[1]-y[1])};
+  const seaNeighbors=a=>SV.filter(q=>q!==a&&adj(a,q));
   const validPort=(p,c)=>!!p&&p.t==='p'&&p.c===c&&!p.occ&&canBuildPort(p)&&L(p,5)>0;
   const landReach=(c,from)=>{
    const seen=new Set([from]),st=[from];
@@ -3232,27 +3227,64 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
    }
    return best;
   };
-  /* Ruch na morze dopiero w NASTĘPNEJ turze po byciu w porcie. */
+  /* BFS po akwenach – następny krok w stronę celu (1 akwen = 1 tura). */
+  const nextSeaToward=(from,goalSea)=>{
+   if(!from||!goalSea||from===goalSea)return goalSea;
+   const seen=new Set([from]),q=[[from]],parent=new Map();
+   while(q.length){
+    const path=q.shift(),cur=path[path.length-1];
+    if(cur===goalSea){
+     /* zwróć drugi element ścieżki (pierwszy krok) */
+     return path[1]||goalSea;
+    }
+    for(const n of seaNeighbors(cur)){
+     if(seen.has(n))continue;
+     seen.add(n);parent.set(n,cur);
+     q.push(path.concat([n]));
+    }
+   }
+   /* brak ścieżki – wybierz sąsiada najbliższego celowi */
+   const opts=seaNeighbors(from);
+   if(!opts.length)return null;
+   opts.sort((a,b)=>seaDist(a,goalSea)-seaDist(b,goalSea));
+   return opts[0];
+  };
+  const goalSeaFor=(target,fromSea)=>{
+   if(target.t==='s')return target;
+   const seas=seasNear(target);
+   if(!seas.length)return null;
+   if(fromSea&&seas.includes(fromSea))return fromSea;
+   seas.sort((a,b)=>seaDist(fromSea||a,a)-seaDist(fromSea||b,b));
+   return seas[0];
+  };
+
   const embarkNextTurn=(c,u,port,target)=>{
    const goal=target.t==='s'?[target]:seasNear(target);
-   const sea=seasNear(port).find(s=>goal.includes(s));
-   if(!sea){u.dest=null;u.shipOrder=null;u.embarkReady=false;toast('Brak połączenia morskiego z tym celem.');return false}
+   const sea=seasNear(port).find(s=>goal.includes(s))||seasNear(port)[0];
+   if(!sea){u.dest=null;u.shipOrder=null;u.embarkReady=false;u.embarkTurn=null;toast('Brak połączenia morskiego z tym celem.');return false}
    u.shipOrder=null;u.embarkReady=false;u.embarkTurn=null;
    u.from=u.p;u.moveAt=performance.now();u.p=sea;u.onShip=true;
-   u.dest=target.t==='p'?target:null;
-   toast('⚓ '+u.name+' wypływa z portu '+port.n+' na '+sea.n+(target.t==='p'?' w stronę '+target.n:'')+'.');
+   /* Cel końcowy trzymamy w u.seaGoal; dest = następny krok (może być ten sam akwen jeśli cel lądowy tu). */
+   u.seaGoal=target;
+   if(target.t==='p'&&seasNear(target).includes(sea)){
+    u.dest=target; /* następna tura: lądowanie */
+   }else if(target.t==='s'&&target===sea){
+    u.dest=null;u.seaGoal=null;
+   }else{
+    u.dest=target; /* pathfind w stepUnit */
+   }
+   toast('⚓ '+u.name+' wypływa z portu '+port.n+' na '+sea.n+'.');
    return true;
   };
   const orderViaPort=(c,u,port,target)=>{
    if(c.ap<1){toast('Brak punktów akcji');return}
    c.ap=r2(c.ap-1);UB.mapPick=false;u.onShip=false;
    if(port===u.p){
-    /* Już w porcie – zaokrętowanie dopiero od następnej tury. */
     u.dest=null;u.shipOrder={port,target};u.embarkReady=true;u.embarkTurn=G.turn;
     toast('⚓ '+u.name+' zaokrętowuje się w porcie '+port.n+' – wypłynie następną turą.');
    }else{
     u.dest=port;u.shipOrder={port,target};u.embarkReady=false;u.embarkTurn=null;
-    toast('⚓ '+u.name+' maszeruje do portu '+port.n+(target.t==='s'?', skąd wypłynie na '+target.n:', skąd popłynie do '+target.n)+'.');
+    toast('⚓ '+u.name+' maszeruje do portu '+port.n+'.');
    }
    uRef();
   };
@@ -3261,22 +3293,46 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
   uMove=function(c,u,target){
    if(!c||!u||!u.p||!target)return prevMove(c,u,target);
    const here=u.p;
+
+   /* ===== NA MORZU: 1 akwen = 1 tura (jak prowincja na lądzie) ===== */
    if(here.t==='s'){
     if(target===here){toast('Oddział już jest na tym akwenie.');return}
-    if(target.t==='s'){toast('Z akwenu można dopłynąć tylko do przybrzeżnej prowincji.');return}
-    if(!seasNear(target).includes(here)){toast('Wylądować można tylko w prowincji przybrzeżnej nad akwenem: '+here.n);return}
-    if(!canEnter(c,target)){toast('Nie możesz tam wejść – najpierw wypowiedz wojnę: '+holder(target).n);return}
     if(c.ap<1){toast('Brak punktów akcji');return}
-    c.ap=r2(c.ap-1);u.from=here;u.moveAt=performance.now();u.p=target;u.dest=null;u.onShip=false;u.shipOrder=null;u.embarkReady=false;UB.mapPick=false;
-    toast('⚓ '+u.name+' wysiada w prowincji '+target.n+'.');uRef();return;
+
+    if(target.t==='p'){
+     if(!canEnter(c,target)){toast('Nie możesz tam wejść – najpierw wypowiedz wojnę: '+holder(target).n);return}
+     const landSeas=seasNear(target);
+     if(landSeas.includes(here)){
+      /* Lądowanie z bieżącego akwenu – 1 tura */
+      c.ap=r2(c.ap-1);u.dest=target;u.seaGoal=target;u.onShip=true;UB.mapPick=false;
+      toast('⚓ '+u.name+' kieruje się do lądowania w '+target.n+'.');uRef();return;
+     }
+     /* Najpierw rejs do akwenu przybrzeżnego celu – po 1 akwenie na turę */
+     const goalSea=goalSeaFor(target,here);
+     if(!goalSea){toast('Brak drogi morskiej do tej prowincji.');return}
+     c.ap=r2(c.ap-1);u.dest=target;u.seaGoal=target;u.onShip=true;UB.mapPick=false;
+     toast('⚓ '+u.name+' płynie w stronę '+target.n+' (1 akwen = 1 tura).');uRef();return;
+    }
+
+    if(target.t==='s'){
+     if(!adj(here,target)&&!seaNeighbors(here).includes(target)){
+      /* daleki cel – zapamiętaj, idź krok po kroku */
+      c.ap=r2(c.ap-1);u.dest=target;u.seaGoal=target;u.onShip=true;UB.mapPick=false;
+      toast('⚓ '+u.name+' płynie w stronę '+target.n+' (1 akwen = 1 tura).');uRef();return;
+     }
+     c.ap=r2(c.ap-1);u.dest=target;u.seaGoal=target;u.onShip=true;UB.mapPick=false;
+     toast('⚓ '+u.name+' płynie na '+target.n+'.');uRef();return;
+    }
+    return prevMove(c,u,target);
    }
+
    if(target.t==='s'){
     const port=pickPort(c,u,[target]);
-    if(!port){toast('Brak portu nad akwenem „'+target.n+'” (albo żaden taki port nie jest osiągalny lądem). Zbuduj port w prowincji przybrzeżnej.');return}
+    if(!port){toast('Brak portu nad akwenem „'+target.n+'”. Zbuduj port w prowincji przybrzeżnej.');return}
     orderViaPort(c,u,port,target);return;
    }
    if(target.t==='p'){
-    u.shipOrder=null;u.onShip=false;u.embarkReady=false;
+    u.shipOrder=null;u.onShip=false;u.embarkReady=false;u.embarkTurn=null;u.seaGoal=null;
     if(!canEnter(c,target)){toast('Nie możesz tam wejść – najpierw wypowiedz wojnę: '+holder(target).n);renderUbar();return}
     const byLand=adj(here,target)||landReach(c,here).has(target);
     if(!byLand){
@@ -3292,31 +3348,51 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
   const prevStep=stepUnit;
   stepUnit=function(c,u,used){
    if(!u||!u.p)return prevStep(c,u,used);
+
+   /* ===== Ruch na morzu: jeden skok na turę ===== */
    if(u.p.t==='s'){
-    const d=u.dest;
-    if(d&&d.t==='p'){
-     if(seasNear(d).includes(u.p)){
-      if(!canEnter(c,d)){u.dest=null;toast('Nie możesz wkroczyć do tej prowincji.');return}
-      u.from=u.p;u.moveAt=performance.now();u.p=d;u.dest=null;u.onShip=false;
-      toast('⚓ '+u.name+' dociera do prowincji '+d.n+'.');return;
-     }
-     u.dest=null;toast('Oddział nie może dopłynąć do prowincji '+d.n+'.');return;
+    const goal=u.seaGoal||u.dest;
+    if(!goal){u.dest=null;return}
+
+    /* Lądowanie gdy jesteśmy przy celu */
+    if(goal.t==='p'&&seasNear(goal).includes(u.p)){
+     if(!canEnter(c,goal)){u.dest=null;u.seaGoal=null;toast('Nie możesz wkroczyć do tej prowincji.');return}
+     u.from=u.p;u.moveAt=performance.now();u.p=goal;u.dest=null;u.seaGoal=null;u.onShip=false;
+     toast('⚓ '+u.name+' ląduje w prowincji '+goal.n+'.');return;
     }
-    u.dest=null;return;
+
+    /* Cel = ten sam akwen */
+    if(goal.t==='s'&&goal===u.p){u.dest=null;u.seaGoal=null;return}
+
+    const targetSea=goal.t==='s'?goal:goalSeaFor(goal,u.p);
+    if(!targetSea){u.dest=null;u.seaGoal=null;toast('Brak trasy morskiej.');return}
+
+    if(targetSea===u.p){
+     /* już na docelowym akwenie – jeśli cel lądowy, spróbuj lądować wyżej; inaczej stop */
+     if(goal.t==='p'){u.dest=goal;return}
+     u.dest=null;u.seaGoal=null;return;
+    }
+
+    const next=nextSeaToward(u.p,targetSea);
+    if(!next){toast('Brak sąsiedniego akwenu na trasie.');u.dest=null;u.seaGoal=null;return}
+    if(used&&used.has&&used.has(next)){/* zajęty – i tak idziemy */}
+    u.from=u.p;u.moveAt=performance.now();u.p=next;u.onShip=true;
+    if(used&&used.add)used.add(next);
+    if(goal.t==='s'&&next===goal){u.dest=null;u.seaGoal=null;toast('⚓ '+u.name+' dotarł na '+goal.n+'.');}
+    else if(goal.t==='p'&&seasNear(goal).includes(next)){u.dest=goal;/* następna tura lądowanie */}
+    else{u.dest=goal;}
+    return;
    }
+
    const o=u.shipOrder;
    if(o){
     if(u.p===o.port){
-     /* Przyjście do portu: oznacz gotowość. Wypłynięcie dopiero gdy minie tura przybycia. */
      if(!u.embarkReady||u.embarkTurn==null){
       u.embarkReady=true;u.embarkTurn=G.turn;
       toast('⚓ '+u.name+' dotarł do portu '+o.port.n+' – wypłynie następną turą.');
       return;
      }
-     if(G.turn<=u.embarkTurn){
-      /* ta sama tura – jeszcze nie wypływaj */
-      return;
-     }
+     if(G.turn<=u.embarkTurn)return;
      embarkNextTurn(c,u,o.port,o.target);
      return;
     }
@@ -3332,79 +3408,225 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
    return prevStep(c,u,used);
   };
 
-  /* ---- 2) Duży kreskówkowy statek zamiast emotki ---- */
-  function drawCartoonShip(g, sc){
-   /* sc = skala świata (V.s). Rysujemy w lokalnych px ekranu, potem skalujemy odwrotnie. */
-   const k=Math.max(22, Math.min(56, 34/Math.max(.35,sc)));
+  /* ---- Cache obrazków flag ---- */
+  const flagImgCache=new Map();
+  const getFlagImg=c=>{
+   if(!c||!c.f||!D.F[c.f])return null;
+   let im=flagImgCache.get(c.f);
+   if(im)return im.complete?im:null;
+   im=new Image();
+   im.src=flagURL(c.f);
+   flagImgCache.set(c.f,im);
+   return null;
+  };
+
+  function drawCartoonShip(g, sc, px, py, country){
+   const k=Math.max(30, Math.min(68, 46/Math.max(.35,sc)));
    g.save();
-   g.scale(1/sc,1/sc);
-   g.translate(0, -k*0.15);
+   g.translate(px, py);
    /* cień na wodzie */
-   g.fillStyle='rgba(10,30,50,.28)';
-   g.beginPath();g.ellipse(0,k*0.55,k*0.95,k*0.22,0,0,Math.PI*2);g.fill();
+   g.fillStyle='rgba(10,30,50,.35)';
+   g.beginPath();g.ellipse(0,k*0.48,k*1.05,k*0.22,0,0,Math.PI*2);g.fill();
    /* kadłub */
    const hull=g.createLinearGradient(-k,0,k,0);
-   hull.addColorStop(0,'#8b4518');hull.addColorStop(.35,'#c4783a');hull.addColorStop(.7,'#a85f28');hull.addColorStop(1,'#6e3410');
+   hull.addColorStop(0,'#5a2a0c');hull.addColorStop(.35,'#c4783a');hull.addColorStop(.7,'#a85f28');hull.addColorStop(1,'#4a2008');
    g.fillStyle=hull;
    g.beginPath();
-   g.moveTo(-k*0.95,k*0.08);
-   g.quadraticCurveTo(-k*1.05,k*0.45,-k*0.55,k*0.55);
-   g.lineTo(k*0.55,k*0.55);
-   g.quadraticCurveTo(k*1.05,k*0.45,k*0.95,k*0.08);
-   g.lineTo(k*0.75,-k*0.05);
-   g.lineTo(-k*0.75,-k*0.05);
+   g.moveTo(-k*1.0,k*0.02);
+   g.quadraticCurveTo(-k*1.1,k*0.42,-k*0.55,k*0.52);
+   g.lineTo(k*0.55,k*0.52);
+   g.quadraticCurveTo(k*1.1,k*0.42,k*1.0,k*0.02);
+   g.lineTo(k*0.8,-k*0.1);
+   g.lineTo(-k*0.8,-k*0.1);
    g.closePath();g.fill();
-   g.strokeStyle='#3a1c08';g.lineWidth=Math.max(1.2,k*0.06);g.stroke();
+   g.strokeStyle='#1a0c04';g.lineWidth=Math.max(1.5,k*0.07);g.stroke();
    /* pokład */
-   g.fillStyle='#e8d4a8';
-   g.beginPath();g.moveTo(-k*0.72,-k*0.05);g.lineTo(k*0.72,-k*0.05);g.lineTo(k*0.58,k*0.12);g.lineTo(-k*0.58,k*0.12);g.closePath();g.fill();
+   g.fillStyle='#f5e8c0';
+   g.beginPath();g.moveTo(-k*0.76,-k*0.1);g.lineTo(k*0.76,-k*0.1);g.lineTo(k*0.62,k*0.12);g.lineTo(-k*0.62,k*0.12);g.closePath();g.fill();
    g.strokeStyle='#5a3a18';g.lineWidth=Math.max(1,k*0.04);g.stroke();
-   /* burty / paski */
-   g.strokeStyle='rgba(255,220,160,.45)';g.lineWidth=Math.max(1,k*0.035);
-   g.beginPath();g.moveTo(-k*0.7,k*0.22);g.lineTo(k*0.7,k*0.22);g.stroke();
    /* maszt */
-   g.fillStyle='#4a2e14';
-   g.fillRect(-k*0.05,-k*1.15,k*0.1,k*1.12);
-   /* żagiel */
-   const sail=g.createLinearGradient(0,-k,k*0.9,0);
-   sail.addColorStop(0,'#fff8e8');sail.addColorStop(1,'#d4e8ff');
-   g.fillStyle=sail;
+   g.fillStyle='#3a2410';
+   g.fillRect(-k*0.06,-k*1.35,k*0.12,k*1.3);
+   g.strokeStyle='#1a1008';g.lineWidth=1;g.strokeRect(-k*0.06,-k*1.35,k*0.12,k*1.3);
+   /* FLAGA na maszcie (zamiast białego żagla) – duża, jako „żagiel” z flagą kraju */
+   const fim=getFlagImg(country);
+   const fx=k*0.08, fy=-k*1.28, fw=k*0.95, fh=k*0.72;
+   g.save();
    g.beginPath();
-   g.moveTo(k*0.05,-k*1.1);
-   g.quadraticCurveTo(k*0.95,-k*0.55,k*0.08,-k*0.05);
-   g.lineTo(k*0.05,-k*1.1);
-   g.closePath();g.fill();
-   g.strokeStyle='#2a4060';g.lineWidth=Math.max(1,k*0.045);g.stroke();
-   /* flaga */
-   g.fillStyle='#e63946';
-   g.beginPath();g.moveTo(k*0.05,-k*1.15);g.lineTo(k*0.42,-k*1.02);g.lineTo(k*0.05,-k*0.9);g.closePath();g.fill();
-   /* okna / iluminatory */
-   g.fillStyle='#7ec8ff';
-   for(const ox of [-k*0.35,0,k*0.35]){
-    g.beginPath();g.arc(ox,k*0.32,k*0.09,0,Math.PI*2);g.fill();
-    g.strokeStyle='#2a1c0c';g.lineWidth=1;g.stroke();
+   /* kształt żagla-flagi */
+   g.moveTo(fx, fy);
+   g.quadraticCurveTo(fx+fw*1.05, fy+fh*0.45, fx+fw*0.15, fy+fh);
+   g.lineTo(fx, fy+fh);
+   g.closePath();
+   g.clip();
+   if(fim){
+    g.drawImage(fim, fx, fy, fw, fh);
+   }else{
+    const col=country&&country.owner?country.owner.color:(country?`hsl(${country.h|0},${country.s|0}%,${Math.max(30,country.l|40)}%)`:'#e63946');
+    g.fillStyle=col;g.fillRect(fx,fy,fw,fh);
    }
-   /* falowanie – mała fala przy dziobie */
-   g.strokeStyle='rgba(200,240,255,.7)';g.lineWidth=Math.max(1.2,k*0.05);g.lineCap='round';
-   g.beginPath();g.moveTo(k*0.7,k*0.48);g.quadraticCurveTo(k*1.05,k*0.35,k*1.25,k*0.55);g.stroke();
-   g.beginPath();g.moveTo(-k*0.7,k*0.48);g.quadraticCurveTo(-k*1.05,k*0.35,-k*1.25,k*0.55);g.stroke();
+   g.restore();
+   /* kontur flagi/żagla */
+   g.beginPath();
+   g.moveTo(fx, fy);
+   g.quadraticCurveTo(fx+fw*1.05, fy+fh*0.45, fx+fw*0.15, fy+fh);
+   g.lineTo(fx, fy+fh);
+   g.closePath();
+   g.strokeStyle='rgba(0,0,0,.65)';g.lineWidth=Math.max(1.2,k*0.04);g.stroke();
+   /* mała reja */
+   g.strokeStyle='#3a2410';g.lineWidth=Math.max(1.5,k*0.05);
+   g.beginPath();g.moveTo(-k*0.08,fy+2);g.lineTo(fx+fw*0.7,fy+2);g.stroke();
+   /* iluminatory */
+   g.fillStyle='#7ec8ff';
+   for(const ox of [-k*0.4,0,k*0.4]){
+    g.beginPath();g.arc(ox,k*0.3,k*0.11,0,Math.PI*2);g.fill();
+    g.strokeStyle='#1a1008';g.lineWidth=1.3;g.stroke();
+   }
+   /* fale */
+   g.strokeStyle='rgba(210,245,255,.9)';g.lineWidth=Math.max(1.6,k*0.06);g.lineCap='round';
+   g.beginPath();g.moveTo(k*0.75,k*0.45);g.quadraticCurveTo(k*1.2,k*0.3,k*1.4,k*0.55);g.stroke();
+   g.beginPath();g.moveTo(-k*0.75,k*0.45);g.quadraticCurveTo(-k*1.2,k*0.3,-k*1.4,k*0.55);g.stroke();
+   g.restore();
+  }
+
+  function drawLandArmyBadge(g, x, y, country, nStr, pwStr, isOwner){
+   const w=Math.max(72, 12+nStr.length*7+pwStr.length*7+36);
+   const h=26;
+   g.save();
+   g.translate(x,y);
+   /* cień */
+   g.fillStyle='rgba(0,0,0,.25)';
+   g.beginPath();g.roundRect(-w/2+2, -h/2+3, w, h, 8);g.fill();
+   /* tło */
+   const bg=isOwner?(country.owner&&country.owner.color)||'#3a6ea5':'rgba(40,25,10,.9)';
+   g.fillStyle=bg;
+   g.strokeStyle='#fff';g.lineWidth=1.6;
+   g.beginPath();g.roundRect(-w/2, -h/2, w, h, 8);g.fill();g.stroke();
+   /* tarczka / hełm kreskówkowy */
+   const hx=-w/2+14, hy=0;
+   g.fillStyle='#5a6a7a';
+   g.beginPath();g.arc(hx,hy+2,8,0,Math.PI*2);g.fill();
+   g.fillStyle='#3a4550';
+   g.beginPath();g.ellipse(hx,hy-2,9,5,0,Math.PI,0);g.fill();
+   g.strokeStyle='#1a2028';g.lineWidth=1;g.stroke();
+   /* wizjer */
+   g.fillStyle='#9ad0ff';g.fillRect(hx-4,hy,8,3);
+   /* flaga kraju przy hełmie */
+   const fim=getFlagImg(country);
+   const fx=hx+12, fy=-8, fw=16, fh=11;
+   g.save();
+   g.beginPath();g.rect(fx,fy,fw,fh);g.clip();
+   if(fim)g.drawImage(fim,fx,fy,fw,fh);
+   else{
+    const col=country&&country.owner?country.owner.color:`hsl(${(country&&country.h)|0},60%,45%)`;
+    g.fillStyle=col;g.fillRect(fx,fy,fw,fh);
+   }
+   g.restore();
+   g.strokeStyle='rgba(0,0,0,.5)';g.lineWidth=1;g.strokeRect(fx,fy,fw,fh);
+   /* tekst liczebności */
+   g.font='800 11.5px Poppins,system-ui,sans-serif';
+   g.textAlign='left';g.textBaseline='middle';
+   const tc=isOwner&&country.owner&&country.owner.color==='#ffe119'?'#111':'#fff';
+   g.fillStyle=tc;
+   g.fillText(nStr+'  ⚔ '+pwStr, fx+fw+5, 1);
    g.restore();
   }
 
   const prevDraw=draw;
   draw=function(){
    prevDraw();
-   const sc=V.s;
-   for(const c of C)for(const u of c.units||[])if(u.p&&u.p.t==='s'&&u.onShip){
-    const m=mid(u.p);
+   try{
+    if(typeof HIST_FEATURES!=='undefined'&&HIST_FEATURES)return;
+    const s=V.s;
+    const l=-V.tx/s,r=(W-V.tx)/s,t=-V.ty/s,b=(H-V.ty)/s,px=.7/s;
+    const vis=q=>!(q[2]<l||q[0]>r||q[3]<t||q[1]>b)&&(q[2]-q[0]>px||q[3]-q[1]>px);
+    const me=G.players&&G.players[G.cur]&&G.players[G.cur].c;
+    const selected=sel&&sel.t==='p'?sel.c:(sel&&sel.t==='c'?sel:null);
+    const show=c=>!!(c&&(c===me||c===selected||(selected&&selected.nb&&selected.nb.has(c))||(me&&me.nb&&me.nb.has(c))));
     cx.save();
-    cx.translate(m[0],m[1]);
-    try{drawCartoonShip(cx,sc)}catch(_){}
+    cx.setTransform(dpr*s,0,0,dpr*s,dpr*V.tx,dpr*V.ty);
+    cx.lineJoin='round';
+    for(const p of PV){
+     if(!vis(p.bb)||!p.c||!show(p.c)||p.c.ps.length<=1)continue;
+     const isMe=p.c===me,isSel=p.c===selected;
+     cx.lineWidth=(isMe||isSel?1.35:.9)/s;
+     cx.strokeStyle=isMe?'rgba(255,255,255,.95)':(isSel?'rgba(255,230,120,.95)':'rgba(20,35,60,.88)');
+     cx.stroke(p.path);
+    }
+    if(selected&&selected.ps){
+     cx.lineWidth=2.4/s;cx.strokeStyle='rgba(255,255,255,.98)';
+     for(const p of selected.ps)if(vis(p.bb))cx.stroke(p.path);
+    }
+    if(me&&me!==selected&&me.ps){
+     cx.lineWidth=2.1/s;cx.strokeStyle='rgba(180,220,255,.9)';
+     for(const p of me.ps)if(vis(p.bb))cx.stroke(p.path);
+    }
     cx.restore();
-   }
+   }catch(_){}
   };
 
-  /* Status w panelu */
+  /* Podmiana etykiet armii w drawOver + statki */
+  const prevOver=drawOver;
+  drawOver=function(s,T){
+   prevOver(s,T);
+   try{
+    const g=OX;
+    const X=x=>x*s+V.tx,Y=y=>y*s+V.ty,inb=(x,y)=>x>-80&&y>-30&&x<W+80&&y<H+30;
+    /* Statki na morzu */
+    for(const c of C)for(const u of c.units||[])if(u.p&&u.p.t==='s'&&u.onShip){
+     const m=mid(u.p);
+     let mx=m[0],my=m[1];
+     if(u.from&&u.moveAt&&performance.now()-u.moveAt<1050){
+      const a=mid(u.from),t=Math.min(1,(performance.now()-u.moveAt)/1050),e=t*t*(3-2*t);
+      mx=a[0]+(m[0]-a[0])*e;my=a[1]+(m[1]-a[1])*e;
+     }
+     /* napis armii wyżej, statek niżej – większy odstęp */
+     const badgeY=Y(my)+(c.owner?-42: -10);
+     drawCartoonShip(g,s,X(mx),Y(my)+36,c);
+     /* napis z ilością armii WYŻEJ nad statkiem */
+     try{
+      const n=u.n|0,pw=((u.n||0)*(1+(u.lv||0)/4))|0;
+      const lx=X(mx), ly=Y(my)+(c.owner?-48:-20);
+      const nStr=typeof cn==='function'?cn(n):String(n);
+      const pwStr=typeof cn==='function'?cn(pw):String(pw|0);
+      const label=' '+nStr+'  ⚔ '+pwStr+' ';
+      g.font='800 11.5px Poppins,system-ui,sans-serif';
+      const tw=g.measureText(label).width+28;
+      g.fillStyle=c.owner?c.owner.color:'rgba(40,25,10,.92)';
+      g.strokeStyle='#fff';g.lineWidth=1.5;
+      g.beginPath();g.roundRect(lx-tw/2,ly-11,tw,22,7);g.fill();g.stroke();
+      const fim2=getFlagImg(c);
+      if(fim2){g.drawImage(fim2,lx-tw/2+5,ly-7,16,11);}
+      else{g.fillStyle='#ccc';g.fillRect(lx-tw/2+5,ly-7,16,11);}
+      g.fillStyle=(c.owner&&c.owner.color==='#ffe119')?'#111':'#fff';
+      g.textAlign='left';g.textBaseline='middle';
+      g.fillText(nStr+'  ⚔ '+pwStr, lx-tw/2+24, ly+1);
+     }catch(_){}
+
+    }
+    /* Nakładka: kreskówkowe armie lądowe z flagą (rysujemy nad starymi badge'ami) */
+    for(const c of C){
+     if(!c.units||!c.units.length)continue;
+     if(!(c.owner||(sel&&sel.c===c)||(c.fit&&(c.fit[2]-c.fit[0])*s>140)))continue;
+     const gr=new Map(),movingByP=new Map(),moveNow=performance.now();
+     for(const u of c.units){
+      if(!u.p||u.p.t==='s')continue;
+      const gg=gr.get(u.p)||{n:0,pw:0};gg.n+=u.n;gg.pw+=u.n*(1+u.lv/4);gr.set(u.p,gg);
+      if(u.from&&u.moveAt&&moveNow-u.moveAt<1050){let a=movingByP.get(u.p);if(!a)movingByP.set(u.p,a=[]);a.push(u)}
+     }
+     for(const[p,gg]of gr){
+      let m=mid(p);
+      const moving=movingByP.get(p)||[];
+      if(moving.length){let sx=0,sy=0,weight=0;for(const u of moving){const a=mid(u.from),b=mid(p),t=Math.min(1,(performance.now()-u.moveAt)/1050),e=t*t*(3-2*t),w=u.n||1;sx+=(a[0]+(b[0]-a[0])*e)*w;sy+=(a[1]+(b[1]-a[1])*e)*w;weight+=w}if(weight)m=[sx/weight,sy/weight]}
+      const x=X(m[0]),y=Y(m[1])+(c.owner?-16:16);
+      if(!inb(x,y))continue;
+      /* zakryj stary badge ciemnym tłem w tym samym miejscu, potem nasz kreskówkowy */
+      drawLandArmyBadge(g,x,y,c,cn(gg.n),cn(gg.pw),!!c.owner);
+     }
+    }
+   }catch(e){console.warn('FX6 overlay',e)}
+  };
+
   const oldRenderUbar=renderUbar;
   renderUbar=function(){
    oldRenderUbar();
@@ -3415,62 +3637,11 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
      const small=row.querySelector('.bn small');
      if(!small)continue;
      if(u.p?.t==='s'&&!small.textContent.includes('na morzu'))small.textContent+=' · ⛵ na morzu';
-     else if(u.embarkReady&&u.shipOrder&&!small.textContent.includes('zaokrętowanie'))small.textContent+=' · ⚓ zaokrętowanie (wypłynie następną turą)';
+     else if(u.embarkReady&&u.shipOrder&&!small.textContent.includes('zaokrętowanie'))small.textContent+=' · ⚓ zaokrętowanie';
     }
    }catch(_){}
   };
-
-  /* ---- 3) Zawsze granice prowincji: własny kraj + kliknięty + sąsiedzi klikniętego ---- */
-  const prevDrawBorders=draw;
-  /* Nadpisujemy fragment rysowania granic poprzez patch draw już zrobiony wyżej –
-     dodatkowa warstwa po draw, żeby kontury były zawsze wyraźne. */
-  const drawBordersExtra=function(){
-   try{
-    if(typeof HIST_FEATURES!=='undefined'&&HIST_FEATURES)return;
-    const s=V.s;
-    const l=-V.tx/s,r=(W-V.tx)/s,t=-V.ty/s,b=(H-V.ty)/s,px=.7/s;
-    const vis=q=>!(q[2]<l||q[0]>r||q[3]<t||q[1]>b)&&(q[2]-q[0]>px||q[3]-q[1]>px);
-    const me=G.players&&G.players[G.cur]&&G.players[G.cur].c;
-    const selected=sel&&sel.t==='p'?sel.c:(sel&&sel.t==='c'?sel:null);
-    const show=c=>{
-     if(!c)return false;
-     if(c===me)return true;
-     if(c===selected)return true;
-     if(selected&&selected.nb&&selected.nb.has(c))return true;
-     if(me&&me.nb&&me.nb.has(c))return true;
-     return false;
-    };
-    cx.save();
-    cx.setTransform(dpr*s,0,0,dpr*s,dpr*V.tx,dpr*V.ty);
-    cx.lineJoin='round';
-    for(const p of PV){
-     if(!vis(p.bb)||!p.c||!show(p.c))continue;
-     if(p.c.ps.length<=1)continue;
-     const isMe=p.c===me;
-     const isSel=p.c===selected;
-     cx.lineWidth=(isMe||isSel?1.35:.9)/s;
-     cx.strokeStyle=isMe?'rgba(255,255,255,.95)':(isSel?'rgba(255,230,120,.95)':'rgba(20,35,60,.88)');
-     cx.stroke(p.path);
-    }
-    /* mocniejszy obrys całego klikniętego kraju */
-    if(selected&&selected.ps&&selected.ps.length){
-     cx.lineWidth=2.4/s;cx.strokeStyle='rgba(255,255,255,.98)';
-     for(const p of selected.ps)if(vis(p.bb))cx.stroke(p.path);
-    }
-    if(me&&me!==selected&&me.ps){
-     cx.lineWidth=2.1/s;cx.strokeStyle='rgba(180,220,255,.9)';
-     for(const p of me.ps)if(vis(p.bb))cx.stroke(p.path);
-    }
-    cx.restore();
-   }catch(e){console.warn('borders extra',e)}
-  };
-  const _draw=draw;
-  draw=function(){
-   _draw();
-   drawBordersExtra();
-  };
-
- }catch(e){console.warn('SW FIX 5',e)}
+ }catch(e){console.warn('SW FIX 6',e)}
 })();
 </script>
 
