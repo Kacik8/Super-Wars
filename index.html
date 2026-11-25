@@ -1650,9 +1650,9 @@ function prepBattle(p){const H=holder(p);if(!H)return null;
  const cp=new Map();for(const[c,u]of UA)cp.set(c,(cp.get(c)||0)+u.n*(1+u.lv/4));let top=null,tb=-1;for(const[c,v]of cp)if(v>tb){tb=v;top=c}
  const fu=UA.find(x=>x[1].from),from=fu?fu[1].from:null,pl=spotPl(p);
  if(!UD.length){return{p,occ:1,pl,apply(){
- const before=holder(p),after=top===p.c?p.c:top;
- p.occ=top===p.c?null:top;startCapAnim(p,before,after,from);
- const m=top===p.c?'✅ '+top.n+' odzyskuje prowincję '+p.n:'🏴 '+top.n+' zajmuje prowincję '+p.n+' (należy do '+p.c.n+')';if(top.owner||p.c.owner)G.nw.push(m)}}}
+ const before=holder(p),after=(top===p.c||!atWar(top,p.c))?p.c:top;
+ p.occ=(top===p.c||!atWar(top,p.c))?null:top;startCapAnim(p,before,after,from);
+ const m=top===p.c?'✅ '+top.n+' odzyskuje prowincję '+p.n:!atWar(top,p.c)?'🕊️ '+top.n+' wyzwala prowincję '+p.n+' – wraca do '+p.c.n:'🏴 '+top.n+' zajmuje prowincję '+p.n+' (należy do '+p.c.n+')';if(top.owner||p.c.owner)G.nw.push(m)}}}
  const A=pw(UD),bombUser=null,bombType=null;
  const bombMul=1;
  const B=pw(UA)*bombMul,castle=L(p,11)>0,mul=castle?1.3:1.2;
@@ -1661,7 +1661,7 @@ function prepBattle(p){const H=holder(p);if(!H)return null;
  const ev={p,att:uc(UA),def:uc(UD),A,B,a,b,castle,mul,defWin,fr,left,from,pl,bombUser,bombType};
  ev.apply=()=>{if(ev.bombUser&&ev.bombType){ev.bombUser.bombs[ev.bombType]=Math.max(0,(ev.bombUser.bombs[ev.bombType]||0)-1);ev.bombUsed=true}const Wn=defWin?UD:UA,Lz=defWin?UA:UD;for(const x of Lz)x[1].n=0;for(const x of Wn)x[1].n=Math.floor(x[1].n*fr);
   for(const c of new Set([...UA,...UD].map(x=>x[0])))c.units=c.units.filter(u=>u.n>0);
-  if(!defWin){const before=holder(p),after=top===p.c?p.c:top;p.occ=top===p.c?null:top;startCapAnim(p,before,after,ev.from);}
+  if(!defWin){const before=holder(p),after=(top===p.c||!atWar(top,p.c))?p.c:top;p.occ=(top===p.c||!atWar(top,p.c))?null:top;startCapAnim(p,before,after,ev.from);}
   const wn=(defWin?ev.def:ev.att).map(c=>c.n).join(' + ');
   const msg='⚔️ '+p.n+': '+wn+' wygrywa ('+(defWin?'obrona':'atak')+'), zostaje '+fm(left)+' żołn.';
   if([...ev.att,...ev.def].some(c=>c.owner))G.nw.push(msg)};
@@ -7137,8 +7137,8 @@ const dict={},reverse={};for(const [pl,vals] of Object.entries(rows)){dict[pl]={
 function normalizeSafe(s){return String(s).replace(/\s+/g,' ').trim()}
 const normalize=s=>s.replace(/\s+/g,' ').trim();
 function lang(){let l=typeof window.SW_activeLang==='function'?window.SW_activeLang():'en';return LANGS.includes(l)?l:'en'}
-const __tc=new Map(),__kc={},__ki={},__dn=new WeakMap();let __tl='';function translateText(s){const L0=lang();if(L0!==__tl){__tc.clear();__tl=L0}let r=__tc.get(s);if(r!==undefined)return r;r=translateText0(s);if(__tc.size>30000)__tc.clear();__tc.set(s,r);return r}
-function translateText0(s){const n=normalize(s),source=reverse[n]||n;const entry=dict[source];if(entry){const out=entry[lang()]||s;const lead=(s.match(/^\s*/)||[''])[0],trail=(s.match(/\s*$/)||[''])[0];return lead+out+trail;}let out=String(s),target=lang();if(target==='pl'||!/\p{L}{3}/u.test(out))return out;const keys=__kc[target]||(__kc[target]=Object.keys(dict).filter(k=>k.length>=3&&k!==dict[k]?.[target]).sort((a,b)=>b.length-a.length));const ix=__ki[target]||(__ki[target]=(()=>{const m=new Map();for(const k of keys){const g=k.slice(0,3);let l=m.get(g);if(!l){l=[];m.set(g,l)}l.push(k)}return m})());const cs=new Set();for(let i=0;i<=out.length-3;i++){const l=ix.get(out.slice(i,i+3));if(l)for(const k of l)cs.add(k)}const arr=[...cs].sort((x,y)=>y.length-x.length);for(const k of arr){const v=dict[k][target];if(!v||v===k||!out.includes(k))continue;out=out.split(k).join(v);}return out}
+const __rxc=new Map();function __rx(k){let r=__rxc.get(k);if(!r){const e=k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');r=new RegExp((/^\p{L}/u.test(k)?'(?<!\\p{L})':'')+e+(/\p{L}$/u.test(k)?'(?!\\p{L})':''),'gu');__rxc.set(k,r)}r.lastIndex=0;return r}const __tc=new Map(),__kc={},__ki={},__dn=new WeakMap();let __tl='';function translateText(s){const L0=lang();if(L0!==__tl){__tc.clear();__tl=L0}let r=__tc.get(s);if(r!==undefined)return r;r=translateText0(s);if(__tc.size>30000)__tc.clear();__tc.set(s,r);return r}
+function translateText0(s){const n=normalize(s),source=reverse[n]||n;const entry=dict[source];if(entry){const out=entry[lang()]||s;const lead=(s.match(/^\s*/)||[''])[0],trail=(s.match(/\s*$/)||[''])[0];return lead+out+trail;}let out=String(s),target=lang();if(target==='pl'||!/\p{L}{3}/u.test(out))return out;const keys=__kc[target]||(__kc[target]=Object.keys(dict).filter(k=>k.length>=3&&k!==dict[k]?.[target]).sort((a,b)=>b.length-a.length));const ix=__ki[target]||(__ki[target]=(()=>{const m=new Map();for(const k of keys){const g=k.slice(0,3);let l=m.get(g);if(!l){l=[];m.set(g,l)}l.push(k)}return m})());const cs=new Set();for(let i=0;i<=out.length-3;i++){const l=ix.get(out.slice(i,i+3));if(l)for(const k of l)cs.add(k)}const arr=[...cs].sort((x,y)=>y.length-x.length);for(const k of arr){const v=dict[k][target];if(!v||v===k||!out.includes(k))continue;out=__rx(k).test(out)?out.replace(__rx(k),()=>v):out;}return out}
 function walk(root){if(!root||root.nodeType!==1&&root.nodeType!==9)return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while((n=w.nextNode())){if(!n.nodeValue.trim()||n.parentElement?.closest('script,style,textarea,input,[contenteditable="true"]'))continue;if(__dn.get(n)===n.nodeValue)continue;const v=translateText(n.nodeValue);if(v!==n.nodeValue)n.nodeValue=v;__dn.set(n,v);}if(root.querySelectorAll){root.querySelectorAll('[placeholder],[title],[aria-label],[aria-description],[alt],input[type="button"],input[type="submit"]').forEach(el=>{for(const a of ['placeholder','title','aria-label','aria-description','alt','value'])if(el.hasAttribute(a)){const v=translateText(el.getAttribute(a));if(v!==el.getAttribute(a))el.setAttribute(a,v)}})}}
 const originalToast=window.toast;if(typeof originalToast==='function'){window.toast=function(s){return originalToast.call(this,translateText(String(s)))}}
 function refresh(){walk(document.body)}
@@ -9023,3 +9023,177 @@ try{
 console.info('[SW+] łatka: pokój kosztuje gwiazdki, surowce w handlu');
 })();
 </script>
+
+<script id="sw-patch-liberate">
+(()=>{'use strict';
+/* ===== Wyzwalanie prowincji i zwrot ziem po pokoju =====
+   1) Prowincja wzięta komuś w pokoju zapamiętuje, od kogo ją odebrano (conqFrom) i kto ją przejął (conqBy).
+   2) Gdy ktoś trzeci odbije ją od zdobywcy i zawrze z nim pokój, ziemia wraca do pierwotnego właściciela
+      (jeśli istnieje i nie jest w wojnie ze zwycięzcą) – zamiast zostać u mnie.
+   3) Po pokoju znika okupacja, która nie ma już uzasadnienia wojną (wcześniej mogła wisieć wiecznie). */
+try{
+ const alive=x=>!!(x&&x.ps&&x.ps.length);
+ /* czy prowincja q (jej obecny właściciel = zdobywca) ma wrócić do dawnego właściciela zamiast do taker */
+ const retOwner=(q,taker)=>{
+  if(!q||!q.conqFrom||q.conqBy!==q.c)return null;
+  const X=q.conqFrom;
+  if(X===taker||X===q.c||!alive(X))return null;
+  try{if(atWar(taker,X))return null}catch(_){}
+  return X;
+ };
+ const takerFor=q=>{const P=G&&G.pc;if(!P)return null;return q.c===P.b?P.a:P.b};
+ /* koszt gwiazdek: zwracane prowincje nic nie kosztują */
+ if(typeof window.starCostOf==='function'){
+  const _sc=window.starCostOf;
+  window.starCostOf=function(list){
+   try{list=(list||[]).filter(q=>!retOwner(q,takerFor(q)))}catch(_){}
+   return _sc.call(this,list);
+  };
+ }
+ const _ap=window.applyPeace;
+ if(typeof _ap==='function')window.applyPeace=function(a,b,take,give,extra){
+  const retTake=[],retGive=[];
+  try{
+   take=(take||[]).filter(q=>{const X=q.c===b?retOwner(q,a):null;if(X){retTake.push([q,X]);return false}return true});
+   give=(give||[]).filter(q=>{const X=q.c===a?retOwner(q,b):null;if(X){retGive.push([q,X]);return false}return true});
+   if(extra&&extra.starCost!=null&&typeof window.starCostOf==='function')extra.starCost=window.starCostOf(take);
+  }catch(e){console.warn('[SW] zwrot ziem',e)}
+  const tk0=(take||[]).filter(q=>q.c===b),gv0=(give||[]).filter(q=>q.c===a);
+  const msg=_ap.call(this,a,b,take,give,extra);
+  let add='';
+  try{
+   const ended=!atWar(a,b);
+   if(ended){
+    /* zapamiętaj podział zdobyczy */
+    for(const q of tk0)if(q.c===a){q.conqFrom=b;q.conqBy=a}
+    for(const q of gv0)if(q.c===b){q.conqFrom=a;q.conqBy=b}
+    const back=[];
+    for(const[q,X]of retTake)if(q.c===b){giveProv(b,X,q);q.conqFrom=null;q.conqBy=null;back.push([q,X])}
+    for(const[q,X]of retGive)if(q.c===a){giveProv(a,X,q);q.conqFrom=null;q.conqBy=null;back.push([q,X])}
+    if(back.length){
+     const by=new Map();for(const[q,X]of back){if(!by.has(X))by.set(X,[]);by.get(X).push(q)}
+     const parts=[];for(const[X,l]of by){parts.push(l.length+' prow. wraca do '+X.n);try{relS(a,X,relG(a,X)+12);relS(b,X,relG(b,X)-4)}catch(_){}
+      try{addWorldNews('peace',X.n+' odzyskuje '+l.length+' prowincji dzięki pokojowi '+a.n+' ↔ '+b.n+'.')}catch(_){}
+      try{if(X.owner&&typeof note==='function')note(X,'↩️ Odzyskujecie '+l.length+' prowincji: '+l.map(q=>q.n).join(', ')+'.')}catch(_){}}
+     add=' · ↩️ '+parts.join(', ');
+     if(a.owner||b.owner)G.nw.push('↩️ Zwrot ziem: '+parts.join(', '));
+    }
+    /* okupacja bez wojny z właścicielem nie ma sensu – zdejmij ją */
+    let freed=0;
+    for(const q of PV){if(q.occ&&(q.occ===q.c||!atWar(q.occ,q.c))){q.occ=null;freed++}}
+    if(freed||back.length){
+     for(const x of C){if(!alive(x)||!x.units)continue;
+      for(const u of x.units){if(!u.p||canEnter(x,u.p))continue;
+       const m=mid(u.p);let best=null,bd=1e18;for(const q of x.ps){const n=mid(q),d=Math.hypot(n[0]-m[0],n[1]-m[1]);if(d<bd){bd=d;best=q}}
+       if(best){u.p=best;u.dest=null}}}
+     try{draw()}catch(_){}
+    }
+   }
+  }catch(e){console.warn('[SW] zwrot ziem (po)',e)}
+  return typeof msg==='string'?msg+add:msg;
+ };
+ /* podpowiedź w panelu pokoju */
+ const _rp=window.renderPbar;
+ if(typeof _rp==='function')window.renderPbar=function(){
+  const r=_rp.apply(this,arguments);
+  try{
+   const P=G.pc,PB=document.getElementById('pbar');
+   if(P&&PB&&PB.style.display!=='none'){
+    const old=PB.querySelector('.sw-return-note');if(old)old.remove();
+    const rows=[];
+    for(const q of P.take)if(q.c===P.b){const X=retOwner(q,P.a);if(X)rows.push([q,X])}
+    for(const q of P.give)if(q.c===P.a){const X=retOwner(q,P.b);if(X)rows.push([q,X])}
+    if(rows.length){
+     const el=document.createElement('div');el.className='pl sw-return-note';
+     el.innerHTML='↩️ <b>Zwrot prawowitym właścicielom</b> (bez kosztu ⭐): '+rows.map(([q,X])=>esc(q.n)+' → <b>'+esc(X.n)+'</b>').join(', ');
+     PB.insertBefore(el,PB.querySelector('.pr')||null);
+    }
+   }
+  }catch(_){}
+  return r;
+ };
+ console.info('[SW+] łatka: wyzwalanie prowincji i zwrot ziem po pokoju');
+}catch(e){console.warn('[SW] łatka wyzwalania',e)}
+})();
+</script>
+
+<style id="sw-gui-polish">
+/* ===== SUPER WARS – dopracowanie GUI (warstwa wizualna, nie zmienia logiki) ===== */
+:root{--sw-glass:rgba(16,22,48,.78);--sw-edge:rgba(150,180,255,.28);--sw-glow:0 10px 34px rgba(4,8,30,.55);--sw-acc1:#4f8cff;--sw-acc2:#8b5cf6;--sw-gold:#ffcf4a}
+*{scrollbar-width:thin;scrollbar-color:rgba(140,165,255,.45) transparent}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:rgba(140,165,255,.38);border-radius:8px}
+::-webkit-scrollbar-thumb:hover{background:rgba(160,185,255,.6)}
+::-webkit-scrollbar-track{background:transparent}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--sw-gold);outline-offset:2px}
+
+/* okna */
+.sw-win{backdrop-filter:blur(10px) saturate(1.2);-webkit-backdrop-filter:blur(10px) saturate(1.2);border:1px solid var(--sw-edge)!important;border-radius:14px!important;box-shadow:var(--sw-glow)!important;transition:box-shadow .2s,opacity .2s}
+.sw-win:hover{box-shadow:0 14px 42px rgba(4,8,30,.65)!important}
+.sw-win-handle{padding:6px 10px!important;font-size:12px!important;letter-spacing:.03em;border-radius:13px 13px 0 0!important;background:linear-gradient(135deg,rgba(52,104,196,.95),rgba(108,66,176,.95))!important}
+.sw-win-handle::before{content:"⋮⋮";opacity:.55;letter-spacing:-2px;font-size:13px;margin-right:2px}
+.sw-win-handle button{width:24px;height:22px;padding:0!important;display:inline-flex;align-items:center;justify-content:center;border-radius:50%!important;transition:background .15s,transform .15s}
+.sw-win-handle button:hover{background:rgba(255,255,255,.3)!important;transform:scale(1.08)}
+.sw-win-resizer{opacity:.55;transition:opacity .15s}.sw-win:hover .sw-win-resizer{opacity:1}
+
+/* pasek narzędzi mapy – kompaktowe „chipy” */
+#swtools button{padding:4px 11px!important;font-size:12px!important;font-weight:700;border-radius:999px!important;line-height:1.5;transition:transform .12s,background .15s,box-shadow .15s}
+#swtools button:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.35)}
+#swtools{gap:5px!important}
+
+/* górny pasek */
+header button{border-radius:10px;font-weight:700;transition:transform .12s,background .15s,box-shadow .15s}
+header button:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.3)}
+header input{border-radius:10px;transition:box-shadow .15s,border-color .15s}
+header input:focus{box-shadow:0 0 0 3px rgba(79,140,255,.35);border-color:var(--sw-acc1)}
+
+/* panel boczny */
+#side{background:linear-gradient(180deg,var(--card),var(--bg))}
+.seg{background:rgba(120,140,200,.18);border-radius:999px;padding:3px}
+.seg button{border-radius:999px!important;font-weight:800}
+.seg button.on{background:linear-gradient(135deg,var(--sw-acc1),var(--sw-acc2))!important;color:#fff!important;box-shadow:0 3px 10px rgba(79,140,255,.45)!important}
+.st,.eco{border-radius:12px;transition:transform .15s,box-shadow .15s,border-color .15s}
+.st:hover,.eco:hover{transform:translateY(-1px);border-color:var(--sw-edge);box-shadow:0 6px 16px rgba(0,0,0,.18)}
+.hero{border-radius:14px;box-shadow:0 10px 26px rgba(0,0,0,.28)}
+h3{display:flex;align-items:center;gap:8px}
+h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+#lst li{transition:background .12s,padding-left .12s}
+#lst li:hover{padding-left:14px}
+
+/* przyciski akcji w panelach */
+#side .btn,#pbar .btn,#ubar .btn,.inv .btn{border-radius:10px;font-weight:800;transition:transform .12s,box-shadow .15s,filter .15s}
+#side .btn:hover,#ubar .btn:hover,.inv .btn:hover{transform:translateY(-1px);filter:brightness(1.1);box-shadow:0 6px 16px rgba(0,0,0,.3)}
+#side .btn:active,#ubar .btn:active,.inv .btn:active{transform:translateY(0)}
+
+/* panel pokoju */
+#pbar.sw-peace-side{border-radius:14px;border:1px solid var(--sw-edge);background:var(--sw-glass)!important;backdrop-filter:blur(10px)}
+#pbar .sw-return-note{padding:9px 12px;border-radius:10px;background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.45);font-size:12.5px;line-height:1.45}
+
+/* przycisk ustawień gry */
+#sw-live-settings-btn{border-radius:999px!important;box-shadow:0 8px 22px rgba(0,0,0,.4)!important;transition:transform .15s,box-shadow .15s}
+#sw-live-settings-btn:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.5)!important}
+
+@media (max-width:760px){
+ #swtools button{padding:3px 9px!important;font-size:11px!important}
+ .sw-win-handle{padding:5px 8px!important}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation-duration:.01ms!important}}
+/* domyślne miejsce paska narzędzi: pod HUD-em (zapisana pozycja użytkownika ma pierwszeństwo) */
+#swtools.sw-win{left:8px!important;top:158px!important;width:min(560px,96vw)}
+
+</style>
+<script id="sw-gui-polish-js">
+(()=>{try{
+ /* Panel „Narzędzia mapy” zajmował pół mapy – przy pierwszym uruchomieniu startuje zwinięty (potem pamięta wybór użytkownika) */
+ const FLAG='sw_gui_polish_v1';
+ let seen=null;try{seen=localStorage.getItem(FLAG)}catch(_){}
+ if(!seen){
+  let tries=0;const t=setInterval(()=>{
+   const el=document.getElementById('swtools'),b=el&&el.querySelector('.sw-win-handle [data-sw-min]');
+   if(b&&el.dataset.swCollapsed!=='1'){b.click();clearInterval(t);try{localStorage.setItem(FLAG,'1')}catch(_){}}
+   else if(++tries>40)clearInterval(t);
+  },500);
+ }
+}catch(e){console.warn('[SW] gui polish',e)}})();
+</script>
+
