@@ -1019,7 +1019,8 @@ function renderHUD(){HUD.classList.toggle('on',G.phase!='menu');try{renderUbar()
   HUD.innerHTML=`<span class="msg"><span class="chip cur" style="--pc:${pl.color}"><span class="dot"></span>${esc(pl.name)}</span> wybierz kraj</span><button class="btn" id="hpick" ${ok?'':'disabled'}>${sc?(sc.owner?esc(sc.n)+' – zajęty':'Wybieram: '+esc(sc.n)):'Kliknij kraj na mapie'}</button><button class="btn alt" id="hrand">Losowy</button><div class="chips">${chips()}</div>`}
  else if(G.phase=='play'){const last=G.cur===G.n-1;
   HUD.innerHTML=`<span class="msg">Tura ${G.turn} · ${gameDate()} · 20 dni</span>${resBar()}<button class="btn alt" id="hreborn">Odrodź</button><div class="chips">${chips()}</div><button class="btn" id="hend" title="Skrót: spacja">${last?'Zakończ turę':'Zakończ turę gracza'}<kbd>spacja</kbd></button>`}renderWorldNews()}
-function rebirthCountry(){const pl=G.players[G.cur],owner=pl&&pl.c;if(!owner)return;const opts=C.filter(c=>!c.reb&&!c.ps.length&&c.homePs&&c.homePs.some(p=>p.c===owner));if(!opts.length){toast('Nie masz żadnych dawnych terenów wymarłego państwa');return}const names=opts.map((c,i)=>(i+1)+'. '+c.n+' ('+c.homePs.filter(p=>p.c===owner).length+' prow.)').join('\n');const v=prompt('Wybierz państwo do odrodzenia:\n'+names);const n=Number(v),c=opts[n-1];if(!c)return;const lands=c.homePs.filter(p=>p.c===owner);if(!lands.length)return;for(const q of lands){owner.ps=owner.ps.filter(p=>p!==q);owner.a-=q.a;q.c=c;c.ps.push(q);c.a+=q.a;q.occ=null}c.np=c.ps.length;c.pop=c.ps.reduce((a,p)=>a+p.pop,0);c.money=START_GOLD;c.units=[];c.owner=null;c.reb=null;c.cmd=mkCmd(c);owner.np=owner.ps.length;G.nw.push('Odrodziło się państwo: '+c.n);toast('Odrodzono '+c.n+' – '+lands.length+' prowincji');renderHUD();draw();if(sel)show(sel,false)}
+const _swAsk=(m,d)=>window.swPrompt?swPrompt(m,d):Promise.resolve(prompt(m,d));
+async function rebirthCountry(){const pl=G.players[G.cur],owner=pl&&pl.c;if(!owner)return;const opts=C.filter(c=>!c.reb&&!c.ps.length&&c.homePs&&c.homePs.some(p=>p.c===owner));if(!opts.length){toast('Nie masz żadnych dawnych terenów wymarłego państwa');return}const names=opts.map((c,i)=>(i+1)+'. '+c.n+' ('+c.homePs.filter(p=>p.c===owner).length+' prow.)').join('\n');const v=window.swPrompt?await swPrompt('Wybierz państwo do odrodzenia:\n'+names,'','Odrodzenie państwa'):prompt('Wybierz państwo do odrodzenia:\n'+names);const n=Number(v),c=opts[n-1];if(!c)return;const lands=c.homePs.filter(p=>p.c===owner);if(!lands.length)return;for(const q of lands){owner.ps=owner.ps.filter(p=>p!==q);owner.a-=q.a;q.c=c;c.ps.push(q);c.a+=q.a;q.occ=null}c.np=c.ps.length;c.pop=c.ps.reduce((a,p)=>a+p.pop,0);c.money=START_GOLD;c.units=[];c.owner=null;c.reb=null;c.cmd=mkCmd(c);owner.np=owner.ps.length;G.nw.push('Odrodziło się państwo: '+c.n);toast('Odrodzono '+c.n+' – '+lands.length+' prowincji');renderHUD();draw();if(sel)show(sel,false)}
 function pickCountry(c){if(!c||c.owner)return;G.pend=c;const pl=G.players[G.cur];
  MCARD.innerHTML=`<h2>${esc(pl.name)} · ${esc(c.n)}</h2><div class="hint" style="margin:0 0 10px">Krajem dowodzi prawdziwy przywódca. Możesz go zostawić albo wpisać własnego dowódcę.</div>${cmdCard(c).replace('<h3>Dowódca</h3>','')}<button class="btn" id="lead-real" style="width:100%;margin-bottom:16px">Zostaw: ${esc(c.cmd.name)}</button><input id="lead-name" maxlength="40" placeholder="Imię i nazwisko własnego dowódcy" autocomplete="off" style="margin-bottom:8px"><button class="btn alt" id="lead-own" style="width:100%">Wybieram własnego dowódcę</button><button class="btn" id="lead-cancel" style="width:100%;margin-top:8px;background:transparent;color:var(--mut);box-shadow:none;border:1px solid var(--line)">Anuluj</button>`;
  MODAL.classList.remove('hide')}
@@ -1197,7 +1198,7 @@ SIN.addEventListener('change',e=>{const t=e.target,c=sel&&sel.c;if(!c||!canInv(c
  else if(t.dataset.mv&&t.value!==''){const u=c.units.find(x=>x.id==t.dataset.mv),q=PV[+t.value];if(!u||!q)return;
   
   if(c.ap<1){toast('Brak punktów akcji');rr();return}c.ap=r2(c.ap-1);u.dest=q;toast(u.name+' wyrusza do '+q.n);rr()}});
-SIN.addEventListener('click',e=>{const c=sel&&sel.c,b=e.target.closest('button');if(!c||!b)return;
+SIN.addEventListener('click',async e=>{const c=sel&&sel.c,b=e.target.closest('button');if(!c||!b)return;
  if(b.dataset.retake!==undefined){retake(c);rr();draw();return}
  if(b.dataset.go){const me=G.players[G.cur].c,u=me&&me.units.find(x=>x.id==b.dataset.go);if(u&&sel.t=='p'){if(!canEnter(me,sel)){toast('Nie możesz tam wejść – najpierw wypowiedz wojnę: '+holder(sel).n);return}if(me.ap<1){toast('Brak punktów akcji');return}me.ap=r2(me.ap-1);u.dest=sel;toast(u.name+' wyrusza do '+sel.n);rr()}return}
  if(!canInv(c))return;
@@ -1205,13 +1206,39 @@ SIN.addEventListener('click',e=>{const c=sel&&sel.c,b=e.target.closest('button')
   const qlv=quality>0?2.5:0,qmul=quality>0?2:1,cost=r1(n*recCost(c)*qmul),ap=Math.max(1,Math.ceil(n/500));
   if(c.money<cost){toast('Za mało złota: '+gold(cost));return}if(c.ap<ap){toast('Za mało punktów akcji: '+ap+' ⚡');return}
   c.money=r1(c.money-cost);c.ap=r2(c.ap-ap);const nm=document.getElementById('un-name').value.trim()||'Oddział '+(++G.uid);c.units.push({id:++G.uid,name:nm,n,lv:qlv,p:pr});toast('Zrekrutowano: '+nm+' ('+fm(n)+')');rr();draw()}
- else if(b.dataset.dis){const u=c.units.find(x=>x.id==b.dataset.dis);if(!u)return;const v=prompt('Ilu żołnierzy zwolnić z oddziału „'+u.name+'” (max '+u.n+')?',u.n);if(v===null)return;const k=Math.min(u.n,Math.max(0,Math.floor(+v)||0));u.n-=k;c.units=c.units.filter(x=>x.n>0);rr();draw()}});
+ else if(b.dataset.dis){const u=c.units.find(x=>x.id==b.dataset.dis);if(!u)return;const v=window.swPrompt?await swPrompt('Ilu żołnierzy zwolnić z oddziału „'+u.name+'” (max '+u.n+')?',u.n,'Zwolnienie żołnierzy'):prompt('Ilu żołnierzy zwolnić z oddziału „'+u.name+'” (max '+u.n+')?',u.n);if(v===null)return;const k=Math.min(u.n,Math.max(0,Math.floor(+v)||0));u.n-=k;c.units=c.units.filter(x=>x.n>0);rr();draw()}});
 
 /* ===== v19 ===== */
 const upkeep=c=>r1(c.units.reduce((a,u)=>a+u.n*(1+u.lv/5),0)*c.pay*.002+soldiers(c)*.01);
 const recBox=p=>{const c=p.c;if(!canInv(c))return'';if(p.occ)return'<div class="inv"><div class="hint">⛔ Prowincja jest okupowana przez '+esc(p.occ.n)+' – nie można tu rekrutować wojska.</div></div>';return`<div class="inv"><h4>Rekrutacja w ${esc(p.n)} · ${g1(recCost(c))} 🪙 / żołnierz · 1 ⚡ / 500</h4><input id="un-name" maxlength="30" placeholder="Nazwa oddziału" style="width:100%;margin-bottom:6px"><input id="un-n" type="number" min="1" value="1000" style="width:100%"><button class="btn" data-rec style="margin-top:8px;width:100%">Rekrutuj</button></div>`};
 const goBox=p=>{if(G.phase!='play')return'';const me=G.players[G.cur].c;if(!me||!me.units.length)return'';return`<div class="inv"><h4>Wyślij oddział do: ${esc(p.n)} · 1 ⚡${canEnter(me,p)?'':' · ⛔ najpierw wojna'}</h4>${me.units.map(u=>`<button data-go="${u.id}" style="width:100%;margin-bottom:4px;text-align:left">🪖 ${esc(u.name)} · poz. ${u.lv.toFixed(1)} · ${fm(u.n)}<small>jest w: ${esc(u.p.n)}${u.p===p?' (tu)':''}</small></button>`).join('')}</div>`};
-const mid=q=>[(q.bb[0]+q.bb[2])/2,(q.bb[1]+q.bb[3])/2];
+/* FIX: środek wizualny prowincji (biegun niedostępności – punkt najgłębiej wewnątrz największego kawałka) zamiast środka prostokąta bb */
+let _PIX=null;
+function visCenter(q){
+ try{
+  if(!_PIX){_PIX=new Map();PV.forEach((p,i)=>_PIX.set(p,i))}
+  const i=_PIX.get(q);if(i==null)return null;
+  const rings=[],S=D.SC;
+  for(const r of D.P[i][4]){const a=[];let x=0,y=0;for(let k=0;k<r.length;k+=2){x+=r[k];y+=r[k+1];a.push([x/S,-y/S])}rings.push(a)}
+  let big=null,ba=-1;
+  for(const a of rings){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const p of a){if(p[0]<x0)x0=p[0];if(p[0]>x1)x1=p[0];if(p[1]<y0)y0=p[1];if(p[1]>y1)y1=p[1]}const ar=(x1-x0)*(y1-y0);if(ar>ba){ba=ar;big={x0,y0,x1,y1}}}
+  if(!big)return null;
+  const inside=(x,y)=>{let c=false;for(const a of rings){for(let k=0,j=a.length-1;k<a.length;j=k++){const A=a[k],B=a[j];if((A[1]>y)!==(B[1]>y)&&x<(B[0]-A[0])*(y-A[1])/(B[1]-A[1])+A[0])c=!c}}return c};
+  const dist=(x,y)=>{let m=1e18;for(const a of rings){for(let k=0,j=a.length-1;k<a.length;j=k++){const A=a[k],B=a[j];let dx=B[0]-A[0],dy=B[1]-A[1],t=dx||dy?((x-A[0])*dx+(y-A[1])*dy)/(dx*dx+dy*dy):0;t=t<0?0:t>1?1:t;const ex=A[0]+t*dx-x,ey=A[1]+t*dy-y,d=ex*ex+ey*ey;if(d<m)m=d}}return Math.sqrt(m)};
+  const score=(x,y)=>inside(x,y)?dist(x,y):-dist(x,y);
+  let cx0=(big.x0+big.x1)/2,cy0=(big.y0+big.y1)/2,hw=(big.x1-big.x0)/2,hh=(big.y1-big.y0)/2;
+  let cand=[];const N=8;
+  for(let a=0;a<N;a++)for(let b=0;b<N;b++){const x=big.x0+(a+.5)/N*(big.x1-big.x0),y=big.y0+(b+.5)/N*(big.y1-big.y0);cand.push({x,y,s:score(x,y)})}
+  let stepX=(big.x1-big.x0)/N,stepY=(big.y1-big.y0)/N;
+  for(let it=0;it<5;it++){
+   cand.sort((p,q)=>q.s-p.s);const top=cand.slice(0,3);cand=[...top];stepX/=2;stepY/=2;
+   for(const t of top)for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++){if(!a&&!b)continue;const x=t.x+a*stepX,y=t.y+b*stepY;cand.push({x,y,s:score(x,y)})}
+  }
+  cand.sort((p,q)=>q.s-p.s);
+  return cand[0].s>0?[cand[0].x,cand[0].y]:null;
+ }catch(e){return null}
+}
+const mid=q=>{if(q.t==='p'){if(q._vc===undefined)q._vc=visCenter(q);if(q._vc)return q._vc}return[(q.bb[0]+q.bb[2])/2,(q.bb[1]+q.bb[3])/2]};
 const CAP_ANIMS=new Map();
 let capAnimRAF=false;
 function tickCapAnims(){
@@ -1226,11 +1253,27 @@ function startCapAnim(p,from,to,source){
  tickCapAnims();
 }
 
+/* FIX: prawdziwe sąsiedztwo prowincji (wspólna granica) zamiast prostokątów bb – wojsko nie przeskakuje już prowincji */
+let _TN=null;
+function trueNb(){
+ if(_TN&&_TN.n===PV.length)return _TN;
+ const cell=.06,grid=new Map(),cnt=PV.map(()=>new Map()),vs=PV.map((p,i)=>{const o=[],S=D.SC;for(const r of D.P[i][4]){let x=0,y=0;for(let k=0;k<r.length;k+=2){x+=r[k];y+=r[k+1];o.push(x/S,-y/S)}}return o});
+ vs.forEach((v,i)=>{for(let k=0;k<v.length;k+=2){const key=Math.floor(v[k]/cell)+','+Math.floor(v[k+1]/cell);let m=grid.get(key);if(!m){m=new Set();grid.set(key,m)}m.add(i)}});
+ vs.forEach((v,i)=>{for(let k=0;k<v.length;k+=2){const gx=Math.floor(v[k]/cell),gy=Math.floor(v[k+1]/cell);for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){const m=grid.get((gx+dx)+','+(gy+dy));if(!m)continue;for(const j of m)if(j!==i)cnt[i].set(j,(cnt[i].get(j)||0)+1)}}});
+ const g=new Map(PV.map(p=>[p,new Set()]));
+ cnt.forEach((m,i)=>{for(const[j,k]of m)if(k>=3){g.get(PV[i]).add(PV[j]);g.get(PV[j]).add(PV[i])}});
+ /* wyspy bez lądowych sąsiadów zachowują dawne połączenia (bb) */
+ for(const p of PV)if(!g.get(p).size)for(const q of PV)if(q!==p&&adj(p,q)){g.get(p).add(q);g.get(q).add(p)}
+ return _TN={n:PV.length,g};
+}
 function stepUnit(c,u,used){
  const d=u.dest,p=u.p;if(!d||d===p){u.dest=null;return}
- const dc=mid(d),dist=q=>{const m=mid(q);return Math.hypot(m[0]-dc[0],m[1]-dc[1])};
- let best=null,bd=dist(p);
- for(const q of PV){if(q===p||!adj(p,q)||!canEnter(c,q))continue;const k=dist(q);if(k<bd){bd=k;best=q}}
+ let best=null;
+ try{const g=trueNb().g;if(g.has(p)&&g.has(d)){const prev=new Map([[p,null]]),q=[p];
+  for(let h=0;h<q.length&&!prev.has(d);h++){for(const b of g.get(q[h])){if(prev.has(b)||!canEnter(c,b))continue;prev.set(b,q[h]);q.push(b)}}
+  if(prev.has(d)){let x=d;while(prev.get(x)!==p)x=prev.get(x);best=x}}}catch(e){console.warn('trueNb',e)}
+ if(!best){const dc=mid(d),dist=q=>{const m=mid(q);return Math.hypot(m[0]-dc[0],m[1]-dc[1])};let bd=dist(p);
+  for(const q of PV){if(q===p||!adj(p,q)||!canEnter(c,q))continue;const k=dist(q);if(k<bd){bd=k;best=q}}}
  if(!best){u.dest=null;return}
  // Cały oddział maszeruje razem – bez dzielenia na transporty i pododdziały.
  u.from=p;u.moveAt=performance.now();u.p=best;
@@ -1269,7 +1312,7 @@ function showOffers(){if(G.phase!='play'||!MODAL.classList.contains('hide'))retu
  if(o.type=='peace'){const tk=o.take.filter(q=>q.c===me),gv=o.give.filter(q=>q.c===o.from),nm=l=>l.map(q=>esc(q.n)+' ('+pScore(q)+'⭐)').join(', ');
   const ex=o.extra||{};
   body+='<br><br>'+(tk.length?'🏴 Zabierają wam: <b>'+nm(tk)+'</b>':'Nic wam nie zabierają')+'<br>'+(gv.length?'🎁 Oddają wam: <b>'+nm(gv)+'</b>':'Nic wam nie oddają')+(ex.vassal?'<br>👑 <b>Żądają wasalstwa</b> ('+Math.ceil(totalPts(me)/3)+'⭐ ekwiwalentu z '+totalPts(me)+'⭐)':'')+(ex.tribute?'<br>💸 <b>Żądają daniny</b> (50% kosztów wojska/turę, '+Math.ceil(totalPts(me)/10)+'⭐ ekwiwalentu)':'')}
- if(o.type==='peace'){MODAL.classList.add('hide');G.po=o;startPeace(o.from,me,true);G.pc.incoming=o;G.pc.take=new Set(o.take.filter(q=>q.c===me));G.pc.give=new Set(o.give.filter(q=>q.c===o.from));G.pc.extra={...(o.extra||{})};renderPbar();draw();return}MCARD.innerHTML=`<h2>📨 ${esc(o.from.n)}</h2><div class="hint" style="margin:0 0 12px">${body}<br>Relacje: ${relName(relG(o.from,me))}.</div><div class="row"><button class="btn" id="oacc">Zgadzam się</button><button class="btn alt" id="orej">Odrzucam</button></div>`;MODAL.classList.remove('hide')}
+ if(o.type==='peace'){MODAL.classList.add('hide');G.po=o;const _v0={s:V.s,tx:V.tx,ty:V.ty};startPeace(o.from,me,true);V.s=_v0.s;V.tx=_v0.tx;V.ty=_v0.ty;G.pc.incoming=o;G.pc.take=new Set(o.take.filter(q=>q.c===me));G.pc.give=new Set(o.give.filter(q=>q.c===o.from));G.pc.extra={...(o.extra||{})};renderPbar();draw();return}MCARD.innerHTML=`<h2>📨 ${esc(o.from.n)}</h2><div class="hint" style="margin:0 0 12px">${body}<br>Relacje: ${relName(relG(o.from,me))}.</div><div class="row"><button class="btn" id="oacc">Zgadzam się</button><button class="btn alt" id="orej">Odrzucam</button></div>`;MODAL.classList.remove('hide')}
 MODAL.addEventListener('click',e=>{const o=G.po;const y=e.target.closest('#oacc'),n=e.target.closest('#orej');if(!o||!(y||n))return;
  G.offers=G.offers.filter(x=>x!==o);G.po=null;MODAL.classList.add('hide');
  if(y){applyOffer(o);toast('✅ Przyjęto propozycję: '+o.from.n)}else{relS(o.from,o.to,relG(o.from,o.to)-2);toast('Odrzucono propozycję: '+o.from.n)}
@@ -1417,8 +1460,8 @@ const occBox=p=>p.occ?`<div class="inv"><div class="hint">🏴 Okupowana przez <
 const isTotal=(a,b)=>b.ps.length>0&&b.ps.every(q=>q.occ===a);
 
 /* ---- wypowiedzenie wojny / akcje dyplomacji ---- */
-function declareWar(b){const pl=G.players[G.cur],a=pl&&pl.c;if(!a||G.phase!='play')return;const ad=dipAdvice('war',a,b);if(!ad.ok){toast(ad.why);return}
- if(!confirm('Wypowiedzieć wojnę krajowi '+b.n+'?'))return;
+async function declareWar(b){const pl=G.players[G.cur],a=pl&&pl.c;if(!a||G.phase!='play')return;const ad=dipAdvice('war',a,b);if(!ad.ok){toast(ad.why);return}
+ if(!(window.swConfirm?await swConfirm('Wypowiedzieć wojnę krajowi '+b.n+'?\nTo zużyje punkty dyplomacji i pogorszy stosunki.','⚔️ Wypowiedzenie wojny'):confirm('Wypowiedzieć wojnę krajowi '+b.n+'?')))return;
  a.tp=r2(a.tp-DIP.war.tp);startWar(a,b);relS(a,b,-70);note(b,'⚔️ '+a.n+' wypowiedziało wam wojnę!');
  G.last='⚔️ Wojna z krajem '+b.n+'. Wyślij oddział na ich prowincję – bitwa odbędzie się między turami.';toast(G.last);renderHUD();if(sel)show(sel,false)}
 function dipClick(t,c){if(t=='trade')xchg(c);else if(t=='war')declareWar(c);else if(t=='peace')startPeace(G.players[G.cur].c,c,false);else doDip(t,c)}
@@ -1824,12 +1867,12 @@ function editorPanel(){
  <p class="hint" id="ed-status">Zmiany są widoczne od razu na mapie.</p>`;
  const status=t=>{const x=document.getElementById('ed-status');if(x)x.textContent=t};
  panel.onchange=e=>{if(e.target.id==='ed-country'){scenarioEditor.selected=C[+e.target.value]||null;editorPanel()}};
- panel.onclick=e=>{
+ panel.onclick=async e=>{
  const b=e.target.closest('button');if(!b)return;if(b.id==='ed-undo'){editorUndo();return}if(b.id==='ed-redo'){editorRedo();return}const c=scenarioEditor.selected,p=sel?.t==='p'?sel:null;
  const askNum=(label,val,min=0,max=1e12)=>{let v=prompt(label,String(val??0));if(v===null)return null;v=Number(v);return Number.isFinite(v)?Math.max(min,Math.min(max,v)):null};
  if(['ed-new','ed-clear','ed-name','ed-regime','ed-religion','ed-capital','ed-money','ed-prov-owner','ed-prov-remove','ed-economy','ed-pop','ed-building','ed-unit-new','ed-unit-edit','ed-unit-del'].includes(b.id))editorCheckpoint();
  if(b.id==='ed-new'){let n=prompt('Nazwa nowego państwa:');if(!n?.trim())return;let color=prompt('Kolor HEX:','#'+Math.floor(Math.random()*0xffffff).toString(16).padStart(6,'0'));if(color===null)return;if(!/^#[0-9a-f]{6}$/i.test(color))color='#d34b4b';let rgb=[1,3,5].map(i=>parseInt(color.slice(i,i+2),16));let hsl=(()=>{let [r,g,bl]=rgb.map(x=>x/255),mx=Math.max(r,g,bl),mn=Math.min(r,g,bl),d=mx-mn,h=0,l=(mx+mn)/2,ss=d?d/(1-Math.abs(2*l-1)):0;if(d){if(mx===r)h=((g-bl)/d)%6;else if(mx===g)h=(bl-r)/d+2;else h=(r-g)/d+4;h*=60;if(h<0)h+=360}return[h,ss*100,l*100]})();let nc={n:n.trim(),f:null,a:0,np:0,fit:[180,90,-180,-90],pop:0,pop0:0,gdp:0,rgb,h:hsl[0],s:hsl[1],l:hsl[2],ps:[],owner:null,money:START_GOLD,editorColor:color,editorCustom:true,units:[],bombs:{normal:0,advanced:0},cmd:{name:'Administracja lokalna',title:'',ini:'AL',own:false},regime:'republic',religion:'none'};C.push(nc);scenarioEditor.selected=nc;editorPanel();draw();return}
- if(b.id==='ed-clear'){if(!confirm('Na pewno odebrać wszystkie prowincje wszystkim państwom?'))return;for(const q of PV){q.c=null;q.col='#657d87'}for(const x of C)x.ps=[];scenarioEditor.selected=null;sel=null;editorRecount();editorPanel();draw();return}
+ if(b.id==='ed-clear'){if(!(window.swConfirm?await swConfirm('Na pewno odebrać wszystkie prowincje wszystkim państwom?','Edytor'):confirm('Na pewno odebrać wszystkie prowincje wszystkim państwom?')))return;for(const q of PV){q.c=null;q.col='#657d87'}for(const x of C)x.ps=[];scenarioEditor.selected=null;sel=null;editorRecount();editorPanel();draw();return}
  if(b.id==='ed-name'&&c){let n=prompt('Nazwa państwa:',c.n);if(n?.trim())c.n=n.trim();let color=prompt('Kolor HEX:',c.editorColor||'#'+c.rgb.map(v=>v.toString(16).padStart(2,'0')).join(''));if(color&&/^#[0-9a-f]{6}$/i.test(color)){c.editorColor=color;c.rgb=[1,3,5].map(i=>parseInt(color.slice(i,i+2),16));c.h=0;c.s=0;c.l=50;for(const q of c.ps)q.col=color}editorPanel();draw();return}
  if(b.id==='ed-regime'&&c){let v=prompt('Ustrój: monarchy / republic / communism / empire',c.regime||'republic');if(['monarchy','republic','communism','empire'].includes(v))c.regime=v;else if(v!==null)toast('Nieznany ustrój');editorPanel();return}
  if(b.id==='ed-religion'&&c){let v=prompt('Religia: none / christianity / islam / buddhism / hinduism / judaism',c.religion||'none');if(['none','christianity','islam','buddhism','hinduism','judaism'].includes(v))c.religion=v;else if(v!==null)toast('Nieznana religia');editorPanel();return}
@@ -2140,19 +2183,19 @@ function ubDo(c,w){
   let tn=u.n,tl=u.n*u.lv;for(const m of mates){tn+=m.n;tl+=m.n*m.lv;m.n=0}
   u.n=tn;u.lv=Math.min(9.9,tl/tn);u.dest=null;c.units=c.units.filter(x=>x.n>0);
   toast('Połączono oddziały: '+u.name+' ('+fm(u.n)+')');UB.mode='home';uRef()}}
-UBAR.addEventListener('click',e=>{
+UBAR.addEventListener('click',async e=>{
  if(G.busy)return;const pl=G.players[G.cur],c=pl&&pl.c;if(!c||!canInv(c))return;
  const T=e.target;
  if(T.closest('[data-ut]')){UB.open=!UB.open;renderUbar();return}
  const b=T.closest('button')||{dataset:{}},D=b.dataset;
  if(b.dataset.callhelp!==undefined){
   const enemies=warsOf(c);if(!enemies.length){toast('Nie prowadzisz teraz żadnej wojny');return}
-  const enemy=enemies.length===1?enemies[0]:enemies[Number(prompt('Wybierz front:\n'+enemies.map((x,i)=>(i+1)+'. '+x.n).join('\n'),'1'))-1];
+  const enemy=enemies.length===1?enemies[0]:enemies[Number(await _swAsk('Wybierz front:\n'+enemies.map((x,i)=>(i+1)+'. '+x.n).join('\n'),'1'))-1];
   if(!enemy||!enemies.includes(enemy))return;
   const eligible=C.filter(x=>x!==c&&x.ps.length&&(isAl(c,x)||x.vassal===c)&&!G.war[DK(x,enemy)]);
   if(!eligible.length){toast('Nie masz dostępnych sojuszników ani wasali, którzy mogliby pomóc na tym froncie');return}
   if(!eligible.length){toast('Wszyscy dostępni sojusznicy już walczą z tym przeciwnikiem');return}
-  const choice=prompt('Wezwać do pomocy (wpisz numery po przecinku lub ALL):\n'+eligible.map((x,i)=>(i+1)+'. '+x.n+' · '+fm(soldiers(x))+' żołn.'+(x.vassal===c?' · wasal':' · sojusznik')).join('\n'),'ALL');
+  const choice=await _swAsk('Wezwać do pomocy (wpisz numery po przecinku lub ALL):\n'+eligible.map((x,i)=>(i+1)+'. '+x.n+' · '+fm(soldiers(x))+' żołn.'+(x.vassal===c?' · wasal':' · sojusznik')).join('\n'),'ALL');
   if(choice===null)return;
   const picked=String(choice).trim().toUpperCase()==='ALL'?eligible:String(choice).split(',').map(v=>eligible[Number(v.trim())-1]).filter(Boolean);
   if(!picked.length){toast('Nie wybrano żadnego państwa');return}
@@ -2259,7 +2302,7 @@ const __bc=document.createElement('canvas'),__bx=__bc.getContext('2d');let __bsi
 function __vkey(s){return V.tx.toFixed(2)+'|'+V.ty.toFixed(2)+'|'+s.toFixed(5)+'|'+cv.width+'|'+cv.height}
 function __sigOf(s){const l=-V.tx/s,r=(W-V.tx)/s,t=-V.ty/s,b=(H-V.ty)/s,a=[window.SW_SHOW_TEX,typeof mapMode!=='undefined'?mapMode:'',(typeof FX!=='undefined'&&FX.tex)?1:0];
  for(const p of SV){const q=p.bb;if(q[2]<l||q[0]>r||q[3]<t||q[1]>b)continue;a.push(p.col)}
- for(const p of PV){const q=p.bb;if(!p.path||q[2]<l||q[0]>r||q[3]<t||q[1]>b)continue;let f='';try{f=mapFill(p)}catch(_){}a.push(f,p.c?p.c.n:'',(p.c&&p.c.ps&&p.c.ps.length===1)?1:0)}
+ for(const p of PV){const q=p.bb;if(!p.path||q[2]<l||q[0]>r||q[3]<t||q[1]>b)continue;let f='';try{f=mapFill(p)}catch(_){}a.push(f,p.c?p.c.n+rgb(p.c):'',(p.c&&p.c.ps&&p.c.ps.length===1)?1:0,p.occ?p.occ.n+rgb(p.occ):'')}
  return a.join('|')}
 function __swCache(s){try{const vk=__vkey(s),now=performance.now();if(vk!==__bvk){__bvk=vk;__bvt=now;return null}
  if(__bsig===null||__bc.width!==cv.width||__bc.height!==cv.height)return null;
@@ -2274,7 +2317,14 @@ draw=function(){const s=V.s;{const __c=__swCache(s);if(__c){cx.setTransform(1,0,
   const l=-V.tx/s,r=(W-V.tx)/s,t=-V.ty/s,b=(H-V.ty)/s,vis=q=>!(q[2]<l||q[0]>r||q[3]<t||q[1]>b);
   // Wypełnij akweny bez obrysu — granice kontynentów nie mogą rysować się na oceanie.
   for(const p of SV){if(!vis(p.bb))continue;cx.fillStyle=p.col;cx.fill(p.path,'evenodd')}
-  for(const p of PV){try{if(!vis(p.bb)||!p.path)continue;cx.fillStyle=mapFill(p);cx.fill(p.path,'evenodd');if(p.c&&p.c.ps&&p.c.ps.length===1){cx.strokeStyle=cx.fillStyle;cx.lineWidth=1.2/s;cx.stroke(p.path)}}catch(_e){}}if(window.SW_TEX)window.SW_TEX(s,vis);__swStore(s);
+  for(const p of PV){try{if(!vis(p.bb)||!p.path)continue;cx.fillStyle=mapFill(p);cx.fill(p.path,'evenodd');if(p.c&&p.c.ps&&p.c.ps.length===1){cx.strokeStyle=cx.fillStyle;cx.lineWidth=1.2/s;cx.stroke(p.path)}
+    /* okupacja: tło w kolorze właściciela + ukośne pasy w kolorze okupanta */
+    if(p.occ&&p.c&&mapMode==='political'&&!p.unc&&((p.bb[2]-p.bb[0])*s>6||(p.bb[3]-p.bb[1])*s>6)){
+     cx.fillStyle=rgb(p.c);cx.fill(p.path,'evenodd');
+     cx.save();cx.clip(p.path,'evenodd');cx.strokeStyle=rgb(p.occ);cx.lineWidth=3/s;
+     const x0=Math.max(p.bb[0],l),x1=Math.min(p.bb[2],r),y0=Math.max(p.bb[1],t),y1=Math.min(p.bb[3],b),hh=y1-y0,st=9/s;
+     cx.beginPath();for(let z=x0-hh;z<x1;z+=st){cx.moveTo(z,y1);cx.lineTo(z+hh,y0)}cx.stroke();cx.restore()}
+   }catch(_e){}}if(window.SW_TEX)window.SW_TEX(s,vis);__swStore(s);
   // Nie rysujemy tutaj siatki krawędzi prowincji. Jej geometria zawiera
   // również odcinki na wodzie; właściwe granice państw rysuje osobna warstwa v31.
   if(sel&&sel.t==='p'){cx.fillStyle='rgba(255,216,74,.42)';cx.fill(sel.path,'evenodd');cx.lineWidth=2.2/s;cx.strokeStyle='#fff';window.SW_STROKE(sel,s)}
@@ -2293,8 +2343,8 @@ draw=function(){const s=V.s;{const __c=__swCache(s);if(__c){cx.setTransform(1,0,
  SIN.addEventListener('click',e=>{if(e.target.id==='swsetcap'&&sel?.t==='p'){const c=sel.c;if(c===G.players[G.cur]?.c){c.capital=sel;toast('Nowa stolica: '+sel.n);show(sel,false);draw()}}});
  // Ustroje, budynki i akcje morale/zasobów do panelu kraju.
  const oldShow2=show;show=function(p,open){oldShow2(p,open);if(!p||p.t!=='p'||!p.c||p.c!==G.players[G.cur]?.c||!canInv(p.c))return;const c=p.c;const box=document.createElement('div');box.className='inv';box.innerHTML=`<h4>🌿 Morale i surowce</h4><p>Morale: ${Math.round(c.hap||0)}/100 · Drewno ${c.res?.wood||0} · Mięso ${c.res?.meat||0} · Żelazo ${c.res?.iron||0} · Miedź ${c.res?.copper||0} · Diamenty ${c.res?.diamond||0}</p><button data-party>🎉 Zorganizuj imprezę (100 mięsa + 500 zł)</button><button data-traderes>🤝 Zaproponuj handel zasobami</button><button data-techres>🔬 Rozwój technologii (5 żelaza + 5 miedzi + 1 diament)</button><button data-bombdrop>💣 Zrzuć bombę na kraj</button>`;SIN.append(box)};
- SIN.addEventListener('click',e=>{const bb=e.target.closest('button[data-bld]');if(!bb)return;const i=+bb.dataset.bld,c=G.players[G.cur]?.c;if(!c)return;c.res=c.res||{};const req=i===13?{wood:20,meat:10}:i===14?{wood:15}:i===15?{wood:10,iron:10,copper:5}:{};for(const [k,v] of Object.entries(req))if((c.res[k]||0)<v){e.stopImmediatePropagation();e.preventDefault();toast('Za mało surowca: '+k+' (potrzeba '+v+')');return}for(const [k,v] of Object.entries(req))c.res[k]-=v;},true);
- SIN.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const c=G.players[G.cur]?.c;if(!c)return;if(b.hasAttribute('data-techres')){c.res=c.res||{};if((c.res.iron||0)<5||(c.res.copper||0)<5||(c.res.diamond||0)<1){toast('Potrzeba 5 żelaza, 5 miedzi i 1 diamentu');return}c.res.iron-=5;c.res.copper-=5;c.res.diamond-=1;if(sel?.t==='p')sel.tech=Math.min(100,(sel.tech||0)+1.5);toast('Technologia prowincji wzrosła o 1,5');show(sel,false)}if(b.hasAttribute('data-party')){c.res=c.res||{};if((c.res.meat||0)<100||c.money<500){toast('Potrzeba 100 mięsa i 500 zł');return}c.res.meat-=100;c.money-=500;c.hap=Math.min(100,(c.hap||50)+12);toast('🎉 Udana impreza! Morale wzrosło');renderHUD();if(sel)show(sel,false)}if(b.hasAttribute('data-traderes')){const target=prompt('Nazwa kraju, z którym chcesz handlować:');const other=C.find(x=>x.ps.length&&x!==c&&x.n.toLowerCase()===(target||'').toLowerCase());if(!other){toast('Nie znaleziono kraju');return}const res=prompt('Surowiec (wood/meat/iron/copper/diamond):','meat');const qty=Math.max(1,Math.floor(+prompt('Ilość do zaoferowania:','10')||0));const give=prompt('Co chcesz otrzymać? (gold/wood/meat/iron/copper/diamond)','gold');if(!['wood','meat','iron','copper','diamond'].includes(res)||!['gold','wood','meat','iron','copper','diamond'].includes(give)){toast('Nieprawidłowy surowiec');return}c.res=c.res||{};other.res=other.res||{};if((c.res[res]||0)<qty){toast('Za mało surowca');return}if(other.owner){toast('Oferta handlowa dla gracza zostanie pokazana przy jego turze.');G.offers.push({type:'resource',from:c,to:other,res,qty,give,amount:qty});return}if(Math.random()<.55){c.res[res]-=qty;if(give==='gold'){const amount=qty*100;other.money=Math.max(0,other.money-amount);c.money+=amount}else{other.res[give]=(other.res[give]||0)-qty;c.res[give]=(c.res[give]||0)+qty}toast('Handel zaakceptowany przez '+other.n)}else{relS(c,other,relG(c,other)-3);toast(other.n+' odrzuca ofertę')} }if(b.hasAttribute('data-bombdrop')){const target=prompt('Na jaki kraj zrzucić bombę?');const other=C.find(x=>x.ps.length&&x!==c&&x.n.toLowerCase()===(target||'').toLowerCase());if(!other){toast('Nie znaleziono kraju');return}const kind=prompt('Wybierz typ: normal lub advanced','normal');c.bombs=c.bombs||{};if(!['normal','advanced'].includes(kind)||(c.bombs[kind]||0)<1){toast('Brak takiej bomby w magazynie');return}c.bombs[kind]--;const factor=kind==='advanced'?.16:.07;const provinces=other.ps.slice().sort(()=>Math.random()-.5).slice(0,Math.max(1,Math.ceil(other.ps.length*.18)));for(const q of provinces){q.pop=Math.max(0,Math.round(q.pop*(1-factor)));q.gdp=Math.max(0,Math.round((q.gdp||0)*(1-factor*1.7)));q.tech=Math.max(0,(q.tech||0)*(1-factor*1.4))}other.pop=other.ps.reduce((a,q)=>a+(q.pop||0),0);relS(c,other,relG(c,other)-35);G.last='💥 '+c.n+' zrzucił bombę na '+other.n;toast(G.last+' — relacje gwałtownie spadły');draw();renderHUD()}});
+ SIN.addEventListener('click',e=>{const bb=e.target.closest('button[data-bld]');if(!bb)return;const i=+bb.dataset.bld,c=G.players[G.cur]?.c;if(!c)return;c.res=c.res||{};const req=i===13?{wood:20,meat:10}:i===14?{}:i===15?{wood:10,iron:10,copper:5}:{};for(const [k,v] of Object.entries(req))if((c.res[k]||0)<v){e.stopImmediatePropagation();e.preventDefault();toast('Za mało surowca: '+k+' (potrzeba '+v+')');return}for(const [k,v] of Object.entries(req))c.res[k]-=v;},true);
+ SIN.addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const c=G.players[G.cur]?.c;if(!c)return;if(b.hasAttribute('data-techres')){c.res=c.res||{};if((c.res.iron||0)<5||(c.res.copper||0)<5||(c.res.diamond||0)<1){toast('Potrzeba 5 żelaza, 5 miedzi i 1 diamentu');return}c.res.iron-=5;c.res.copper-=5;c.res.diamond-=1;if(sel?.t==='p')sel.tech=Math.min(100,(sel.tech||0)+1.5);toast('Technologia prowincji wzrosła o 1,5');show(sel,false)}if(b.hasAttribute('data-party')){c.res=c.res||{};if((c.res.meat||0)<100||c.money<500){toast('Potrzeba 100 mięsa i 500 zł');return}c.res.meat-=100;c.money-=500;c.hap=Math.min(100,(c.hap||50)+12);toast('🎉 Udana impreza! Morale wzrosło');renderHUD();if(sel)show(sel,false)}if(b.hasAttribute('data-traderes')){const target=await _swAsk('Nazwa kraju, z którym chcesz handlować:');const other=C.find(x=>x.ps.length&&x!==c&&x.n.toLowerCase()===(target||'').toLowerCase());if(!other){toast('Nie znaleziono kraju');return}const res=await _swAsk('Surowiec (wood/meat/iron/copper/diamond):','meat');const qty=Math.max(1,Math.floor(+await _swAsk('Ilość do zaoferowania:','10')||0));const give=await _swAsk('Co chcesz otrzymać? (gold/wood/meat/iron/copper/diamond)','gold');if(!['wood','meat','iron','copper','diamond'].includes(res)||!['gold','wood','meat','iron','copper','diamond'].includes(give)){toast('Nieprawidłowy surowiec');return}c.res=c.res||{};other.res=other.res||{};if((c.res[res]||0)<qty){toast('Za mało surowca');return}if(other.owner){toast('Oferta handlowa dla gracza zostanie pokazana przy jego turze.');G.offers.push({type:'resource',from:c,to:other,res,qty,give,amount:qty});return}if(Math.random()<.55){c.res[res]-=qty;if(give==='gold'){const amount=qty*100;other.money=Math.max(0,other.money-amount);c.money+=amount}else{other.res[give]=(other.res[give]||0)-qty;c.res[give]=(c.res[give]||0)+qty}toast('Handel zaakceptowany przez '+other.n)}else{relS(c,other,relG(c,other)-3);toast(other.n+' odrzuca ofertę')} }if(b.hasAttribute('data-bombdrop')){const target=await _swAsk('Na jaki kraj zrzucić bombę?');const other=C.find(x=>x.ps.length&&x!==c&&x.n.toLowerCase()===(target||'').toLowerCase());if(!other){toast('Nie znaleziono kraju');return}const kind=await _swAsk('Wybierz typ: normal lub advanced','normal');c.bombs=c.bombs||{};if(!['normal','advanced'].includes(kind)||(c.bombs[kind]||0)<1){toast('Brak takiej bomby w magazynie');return}c.bombs[kind]--;const factor=kind==='advanced'?.16:.07;const provinces=other.ps.slice().sort(()=>Math.random()-.5).slice(0,Math.max(1,Math.ceil(other.ps.length*.18)));for(const q of provinces){q.pop=Math.max(0,Math.round(q.pop*(1-factor)));q.gdp=Math.max(0,Math.round((q.gdp||0)*(1-factor*1.7)));q.tech=Math.max(0,(q.tech||0)*(1-factor*1.4))}other.pop=other.ps.reduce((a,q)=>a+(q.pop||0),0);relS(c,other,relG(c,other)-35);G.last='💥 '+c.n+' zrzucił bombę na '+other.n;toast(G.last+' — relacje gwałtownie spadły');draw();renderHUD()}});
  // Nowe budynki: zoo, tartak, farma zwierzęca. Kopalnia wydobywa trzy metale/kamienie.
  BD.push({k:'zoo',ic:'🦁',n:'Zoo',base:260,fx:'+4 morale i mniejsze ryzyko buntu na poziom'});
  BD.push({k:'sawmill',ic:'🪵',n:'Tartak',base:180,fx:'Produkuje drewno co turę'});
@@ -2532,17 +2582,25 @@ draw=function(){const s=V.s;{const __c=__swCache(s);if(__c){cx.setTransform(1,0,
    cx.save();cx.setTransform(dpr*s,0,0,dpr*s,dpr*V.tx,dpr*V.ty);
    cx.save();cx.clip(p.path,'evenodd');
    const ox=a.origin[0],oy=a.origin[1],tx=(b[0]+b[2])/2,ty=(b[1]+b[3])/2;
-   const dx=tx-ox,dy=ty-oy,len=Math.max(1,Math.hypot(dx,dy));
-   // Ciągły, płynny front: stary kolor znika stopniowo, nowy jest odsłaniany bez skokowych etapów.
+   let dx=tx-ox,dy=ty-oy,len=Math.hypot(dx,dy);
+   if(len<1e-6){dx=1;dy=0;len=1}
+   // Front przejęcia: kolor zdobywcy zalewa prowincję od strony ataku aż do jej przeciwległego końca.
    cx.fillStyle=a.fromColor;cx.fill(p.path,'evenodd');
-   const reach=len*t,px=-dy/len,py=dx/len,half=Math.hypot(b[2]-b[0],b[3]-b[1])*1.5;
-   const fx=ox+dx*t,fy=oy+dy*t;
-   cx.beginPath();cx.moveTo(ox-px*half,oy-py*half);cx.lineTo(ox+px*half,oy+py*half);
-   cx.lineTo(fx+px*half,fy+py*half);cx.lineTo(fx-px*half,fy-py*half);cx.closePath();
-   cx.save();cx.clip(p.path,'evenodd');cx.fillStyle=a.to;cx.fill();
-   const front=cx.createLinearGradient(fx-dx/len*18/s,fy-dy/len*18/s,fx+dx/len*18/s,fy+dy/len*18/s);
-   front.addColorStop(0,'rgba(255,255,255,0)');front.addColorStop(.5,'rgba(255,255,255,.8)');front.addColorStop(1,'rgba(255,255,255,0)');
-   cx.strokeStyle=front;cx.lineWidth=22/s;cx.beginPath();cx.moveTo(fx-px*half,fy-py*half);cx.lineTo(fx+px*half,fy+py*half);cx.stroke();cx.restore();
+   const ux=dx/len,uy=dy/len,px=-uy,py=ux,half=Math.hypot(b[2]-b[0],b[3]-b[1])*1.5;
+   let tmin=1e18,tmax=-1e18;
+   for(const [qx,qy] of [[b[0],b[1]],[b[2],b[1]],[b[0],b[3]],[b[2],b[3]]]){const pr=(qx-ox)*ux+(qy-oy)*uy;if(pr<tmin)tmin=pr;if(pr>tmax)tmax=pr}
+   const pad=(tmax-tmin)*.02+1e-6,f0=tmin-pad,f=f0+((tmax+pad)-f0)*t;
+   const P=(u,v)=>[ox+ux*u+px*v,oy+uy*u+py*v];
+   const q1=P(f0-half,-half),q2=P(f0-half,half),q3=P(f,half),q4=P(f,-half);
+   cx.beginPath();cx.moveTo(q1[0],q1[1]);cx.lineTo(q2[0],q2[1]);cx.lineTo(q3[0],q3[1]);cx.lineTo(q4[0],q4[1]);cx.closePath();
+   cx.fillStyle=a.toColor;cx.fill();
+   if(t<1){
+    const fa=.8*(1-t*t*t),g0=P(f-18/s,0),g1=P(f+18/s,0);
+    const front=cx.createLinearGradient(g0[0],g0[1],g1[0],g1[1]);
+    front.addColorStop(0,'rgba(255,255,255,0)');front.addColorStop(.5,'rgba(255,255,255,'+fa.toFixed(3)+')');front.addColorStop(1,'rgba(255,255,255,0)');
+    const l1=P(f,-half),l2=P(f,half);
+    cx.strokeStyle=front;cx.lineWidth=22/s;cx.beginPath();cx.moveTo(l1[0],l1[1]);cx.lineTo(l2[0],l2[1]);cx.stroke();
+   }
    cx.restore();cx.restore();
    if(t>=1)CAP_ANIMS.delete(p);
   }
@@ -3106,8 +3164,8 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
   const t0=performance.now();
   const mat=new DOMMatrix([1/s,0,0,1/s,0,0]),pats=PATS.map(p=>{const q=cx.createPattern(p,'repeat');if(q.setTransform)q.setTransform(mat);return q});
   const minPx=texCost>40?14:3;let last=-1;
-  for(const p of PV){if(!vis(p.bb))continue;if((p.bb[2]-p.bb[0])*s<minPx&&(p.bb[3]-p.bb[1])*s<minPx)continue;
-   const c=p.c;if(!c)continue;const k=c._tx!=null?c._tx:(c._tx=hs(c.n)%TEXN);
+  for(const p of PV){if(!vis(p.bb))continue;
+    const c=p.c;if(!c)continue;{const f=c.fit;if(f&&(f[2]-f[0])*s<minPx&&(f[3]-f[1])*s<minPx)continue}const k=c._tx!=null?c._tx:(c._tx=hs(c.n)%TEXN);
    if(k!==last){cx.fillStyle=pats[k];last=k}
    cx.fill(p.path,'evenodd')}
   texCost=texCost*.8+(performance.now()-t0)*.2};
@@ -3331,7 +3389,7 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
    try{
     if(p&&p.t==='p'&&p.c&&p.c.units){
      const pl=G.players&&G.players[G.cur],mine=pl&&pl.c===p.c;
-     if(mine){
+     if(mine&&!window.__swSkipAutoSel){
       const keep=p.c.units.find(x=>x.id===UB.selectedUnitId&&x.p===p);
       const u=keep||p.c.units.find(x=>x.p===p&&!x.dest)||p.c.units.find(x=>x.p===p);
       if(u){UB.selectedUnitId=u.id;UB.open=true;renderUbar()}
@@ -3624,6 +3682,9 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
  #sw-live-settings-dialog .swls-toggle{justify-self:end;min-width:112px;border:1px solid #547b68;border-radius:9px;padding:9px 10px;background:#20563e;color:#eafff1;font-weight:800;cursor:pointer}
  #sw-live-settings-dialog .swls-toggle.off{border-color:#80515a;background:#59333d;color:#ffecef}
  #sw-live-settings-dialog .swls-note{color:#b9c6d9;margin:8px 0 0;font-size:12px}
+ body.sw-hide-news #world-news,body.sw-hide-news #sw-news-restore{display:none!important}
+ body.sw-hide-tools #swtools,body.sw-hide-tools #sw-tools-restore{display:none!important}
+ #sw-live-settings-dialog .swls-btns{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}#sw-live-settings-dialog .swls-btns button{flex:1;min-width:140px;border:1px solid #6f87b0;border-radius:10px;padding:10px 12px;background:#2a3d5e;color:#fff;font-weight:800;cursor:pointer}
  @media(max-width:560px){#sw-live-settings-dialog{padding:16px;border-radius:15px}#sw-live-settings-dialog .swls-row{grid-template-columns:1fr;gap:8px}#sw-live-settings-dialog .swls-toggle{justify-self:stretch}#sw-live-settings-dialog .swls-value{text-align:left}}
  `;
  document.head.append(css);
@@ -3651,6 +3712,13 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
    ${toggle('buildings','Budynki','Pokazuj ikony budynków na prowincjach.',()=>window.SW_SHOW_BUILDINGS!==false,v=>window.SW_SHOW_BUILDINGS=v)}
    ${toggle('tex','Tekstura mapy','Włącz lub wyłącz teksturę prowincji.',()=>window.SW_SHOW_TEX!==false,v=>window.SW_SHOW_TEX=v)}
    ${toggle('otherprov','Granice prowincji','Pokaż lub ukryj granice na mapie.',()=>window.SW_SHOW_OTHER_PROV!==false,v=>window.SW_SHOW_OTHER_PROV=v)}
+   <h3>👁 Widoczność elementów</h3>
+   <div class="swls-btns"><button type="button" data-toggle="hideall">🙈 Wyłącz większość</button><button type="button" data-toggle="showall">👁 Włącz wszystko</button></div>
+   ${toggle('labels','Napisy na mapie','Nazwy państw, prowincji i stolic.',()=>{const b=document.getElementById('swlabels');return b?b.classList.contains('on'):true},()=>{})}
+   ${toggle('land','Wojsko lądowe','Odznaki oddziałów lądowych (nazwa, liczba żołnierzy, moc).',()=>window.SW_SHOW_LAND!==false,()=>{})}
+   ${toggle('ships','Floty','Statki i ich odznaki na morzach.',()=>window.SW_SHOW_SHIPS!==false,()=>{})}
+   ${toggle('news','Okno wiadomości','Panel „Wiadomości ze świata”.',()=>!document.body.classList.contains('sw-hide-news'),()=>{})}
+   ${toggle('tools','Pasek narzędzi mapy','Górny pasek z trybami mapy i przełącznikami.',()=>!document.body.classList.contains('sw-hide-tools'),()=>{})}
    <h3>🔊 Dźwięk i wydajność</h3>
    ${toggle('sfx','Efekty dźwiękowe','Dźwięki bitew i akcji.',()=>window.SW_SFX!==false,v=>window.SW_SFX=v)}
    ${toggle('fps','Licznik FPS','Wyświetlaj aktualną liczbę klatek.',()=>window.SW_SHOW_FPS===true,v=>window.SW_SHOW_FPS=v)}
@@ -3671,6 +3739,20 @@ SIN.addEventListener('click',e=>{const b=e.target.closest('#sw-edit-apply');if(!
   if(k==='buildings')window.SW_SHOW_BUILDINGS=!window.SW_SHOW_BUILDINGS;
   if(k==='tex'){window.SW_SHOW_TEX=!window.SW_SHOW_TEX;const f=window.SW_FX;if(f)f.tex=window.SW_SHOW_TEX;}
   if(k==='otherprov')window.SW_SHOW_OTHER_PROV=!window.SW_SHOW_OTHER_PROV;
+  const lb=document.getElementById('swlabels');
+  const labelsOn=()=>lb?lb.classList.contains('on'):true;
+  const setLabels=v=>{if(lb&&labelsOn()!==v)lb.click()};
+  const setFx=v=>{window.SW_SHOW_FX=v;const f=window.SW_FX;if(f){f.life=v;f.creatures=v;f.birds=v}};
+  if(k==='labels')setLabels(!labelsOn());
+  if(k==='land')window.SW_SHOW_LAND=window.SW_SHOW_LAND===false;
+  if(k==='ships')window.SW_SHOW_SHIPS=window.SW_SHOW_SHIPS===false;
+  if(k==='news')document.body.classList.toggle('sw-hide-news');
+  if(k==='tools')document.body.classList.toggle('sw-hide-tools');
+  if(k==='hideall'||k==='showall'){
+   const v=k==='showall';
+   setLabels(v);window.SW_SHOW_ARMIES=v;window.SW_SHOW_LAND=v;window.SW_SHOW_SHIPS=v;window.SW_SHOW_BUILDINGS=v;setFx(v);
+   document.body.classList.toggle('sw-hide-news',!v);document.body.classList.toggle('sw-hide-tools',!v);
+  }
   if(k==='sfx')window.SW_SFX=!window.SW_SFX;
   if(k==='fps'){window.SW_SHOW_FPS=!window.SW_SHOW_FPS;const f=document.getElementById('sw-fps-counter');if(f)f.hidden=!window.SW_SHOW_FPS;}
   render();try{if(typeof sched==='function')sched();if(typeof draw==='function')draw()}catch(err){console.warn('Odświeżenie mapy:',err)}
@@ -3713,7 +3795,7 @@ y>
    return found;
   };
   const seasNear=p=>SV.filter(sea=>seaTouches(p,sea));
-  const midSW=p=>{const b=p.bb;return [(b[0]+b[2])/2,(b[1]+b[3])/2]};
+  const midSW=p=>mid(p);
   const distanceSW=(a,b)=>{const x=midSW(a),y=midSW(b);return Math.hypot((x[0]-y[0])*Math.cos((x[1]+y[1])*Math.PI/360),x[1]-y[1])};
   const validPort=(p,c)=>!!p&&p.t==='p'&&p.c===c&&canBuildPort(p)&&L(p,5)>0;
   const nearestPortFor=(c,unit,target)=>{
@@ -3971,7 +4053,7 @@ y>
    if(!r){r=SV.filter(s=>touchesSea(p,s));snCache.set(p,r)}
    return r;
   };
-  const midPt=p=>{const b=p.bb;return[(b[0]+b[2])/2,(b[1]+b[3])/2]};
+  const midPt=p=>mid(p);
   const seaDist=(a,b)=>{const x=midPt(a),y=midPt(b);return Math.hypot((x[0]-y[0])*Math.cos((x[1]+y[1])*Math.PI/360),x[1]-y[1])};
   const seaNeighbors=a=>SV.filter(q=>q!==a&&adj(a,q));
   const validPort=(p,c)=>!!p&&p.t==='p'&&p.c===c&&!p.occ&&canBuildPort(p)&&L(p,5)>0;
@@ -4398,7 +4480,7 @@ y>
   drawOver=function(s,T){
    prevOver(s,T);
    /* Wyłączone w pasku: Wojsko OFF */
-   if(window.SW_SHOW_ARMIES===false)return;
+   if(window.SW_SHOW_ARMIES===false){window.SW_BADGES=[];return}
    /* Zawsze rysuj armie przy zoomie – nie chowaj nawet podczas panningu/zoomu */
    // if(window.__swPan)return;  // WYŁĄCZONE – armie muszą być widoczne przy przybliżeniu
    try{
@@ -4412,7 +4494,7 @@ y>
     for(const c of C)for(const u of (c.units||[]))if(u.p&&u.p.t==='s'){let a=seaLay.get(u.p);if(!a)seaLay.set(u.p,a=[]);a.push(u)}
     /* --- Statki --- */
     for(const c of C){
-     const units=c.units;if(!units||!units.length)continue;
+     const units=c.units;if(!units||!units.length||window.SW_SHOW_SHIPS===false)continue;
      for(let ui=0;ui<units.length;ui++){
       const u=units[ui];
       if(!u.p||u.p.t!=='s')continue;
@@ -4465,7 +4547,7 @@ y>
       // Przy wysokim zoomie nie culluj całego kraju – tylko poszczególne prowincje
       if(s < 3 && fit&&(fit[2]*s+V.tx<-60||fit[0]*s+V.tx>W+60||fit[3]*s+V.ty<-60||fit[1]*s+V.ty>H+60))continue;
       for(const u of c.units){
-       if(!u.p||u.p.t==='s')continue;
+       if(!u.p||u.p.t==='s'||window.SW_SHOW_LAND===false)continue;
        const bb=u.p.bb;if(!bb)continue;
        if(bb[2]*s+V.tx<-60||bb[0]*s+V.tx>W+60||bb[3]*s+V.ty<-60||bb[1]*s+V.ty>H+60)continue;
        let a=landLay.get(u.p);if(!a)landLay.set(u.p,a=[]);a.push({u,c});
@@ -8043,7 +8125,7 @@ window.apply1440Europe = apply1440Europe;
    </div>`;
  };
 
- if(typeof SIN!=='undefined')SIN.addEventListener('click',e=>{
+ if(typeof SIN!=='undefined')SIN.addEventListener('click',async e=>{
    const b=e.target.closest('button[data-break]');if(!b)return;
    const a=G.players[G.cur]?.c,c=sel&&sel.c;if(!a||!c||a===c)return;
    const type=b.dataset.break,k=DK(a,c),map={ally:G.ally,access:G.access,truce:G.truce,trade:G.trade}[type];
@@ -8051,10 +8133,10 @@ window.apply1440Europe = apply1440Europe;
    const active=type==='truce'?(map[k]||0)>G.turn:termActive(map,k);
    if(!active){toast('To porozumienie nie jest już aktywne');return}
    const label={ally:'sojusz',access:'dostęp wojskowy',truce:'rozejm',trade:'umowę handlową'}[type];
-   if(!confirm('Poprosić '+c.n+' o zgodę na wcześniejsze zakończenie: '+label+'?'))return;
+   if(!(window.swConfirm?await swConfirm('Poprosić '+c.n+' o zgodę na wcześniejsze zakończenie: '+label+'?','🤝 Dyplomacja'):confirm('Poprosić '+c.n+' o zgodę na wcześniejsze zakończenie: '+label+'?')))return;
    let accepted=true;
    if(c.owner){
-     accepted=confirm('Czy druga strona ('+c.n+') wyraża zgodę?');
+     accepted=window.swConfirm?await swConfirm('Czy druga strona ('+c.n+') wyraża zgodę?','🤝 Zgoda drugiej strony'):confirm('Czy druga strona ('+c.n+') wyraża zgodę?');
    }else{
      const rel=relG(a,c),chance=clampN(.58+rel/350,.18,.86);
      accepted=Math.random()<chance;
@@ -8570,6 +8652,43 @@ async function loadGame(id){
  }finally{loadingGame=false}
 }
 
+/* --- eksport / import JSON --- */
+const safeName=s=>String(s||'zapis').replace(/[^\w\- ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]+/g,'').trim().replace(/\s+/g,'_').slice(0,50)||'zapis';
+function downloadText(text,fname){
+ const url=URL.createObjectURL(new Blob([text],{type:'application/json'})),a=document.createElement('a');
+ a.href=url;a.download=fname;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),5000);
+}
+const wrapJson=(meta,snapJson)=>'{"swsave":1,"meta":'+JSON.stringify(meta)+',"snap":'+snapJson+'}';
+async function exportSave(id){
+ const st=await store(),m=(await st.list()).find(x=>x.id===id);
+ if(!m)throw new Error('Nie znaleziono zapisu');
+ const json=await unpack(await st.data(id));
+ downloadText(wrapJson(m,json),'SuperWars_'+safeName(m.name)+'_tura'+m.turn+'.json');
+ toast('⬇ Wyeksportowano: '+m.name);
+}
+async function exportCurrent(){
+ if(!inGame())throw new Error('Eksport możliwy tylko w trakcie gry');
+ const extra={scnSel:window.SCN_SEL||'modern',scn:window.SCN||null,V:{s:V.s,tx:V.tx,ty:V.ty}};
+ const json=JSON.stringify(SER.encodeState(extra));
+ const meta={name:countriesLabel()+' · tura '+G.turn,turn:G.turn,date:(()=>{try{return gameDate()}catch(_){return G.date}})(),country:countriesLabel(),scn:scnLabel()};
+ downloadText(wrapJson(meta,json),'SuperWars_'+safeName(countriesLabel())+'_tura'+G.turn+'.json');
+ toast('⬇ Wyeksportowano bieżącą grę do pliku JSON');
+}
+async function importFile(file){
+ let obj;
+ try{obj=JSON.parse(await file.text())}catch(_){throw new Error('Plik nie jest poprawnym JSON-em')}
+ const snap=obj&&obj.snap?obj.snap:obj;
+ if(!snap||snap.v!==1||!snap.P||!snap.G)throw new Error('To nie jest plik zapisu Super Wars');
+ const staged=SER.decodeState(snap);                 /* walidacja: rzuca błąd, jeśli mapa się nie zgadza */
+ const X=staged.X||{},om=(obj&&obj.meta)||{};
+ const country=(staged.G.players||[]).map(pl=>pl&&pl.c&&pl.c.n).filter(Boolean).join(' / ')||om.country||'–';
+ const scn=(X.scn&&X.scn.label)||(X.scnSel==='1440'?'Świat 1440':X.scnSel==='1938'?'Świat 1938':'Współczesność');
+ const id=newId(),json=JSON.stringify(snap),rec=await pack(json),st=await store();
+ const meta={id,name:om.name||file.name.replace(/\.json$/i,''),auto:false,created:Date.now(),updated:Date.now(),turn:staged.G.turn,date:om.date||staged.G.date||'',country,scn,size:rec.gz?rec.data.byteLength:json.length};
+ await st.put(meta,{id,gz:rec.gz,data:rec.data});
+ return meta;
+}
+
 /* --- okno zapisów --- */
 const css=document.createElement('style');
 css.textContent=`
@@ -8608,8 +8727,9 @@ async function renderSaves(){
  const play=inGame();
  box.innerHTML=`<button class="sw-x" data-sw="close" title="Zamknij">✕</button><h2>💾 Zapisy gry</h2>
   <small style="opacity:.75">Zapisów możesz mieć dowolnie dużo. Gra zapisuje się też automatycznie po każdej turze („Autozapis”).</small>
+  <div class="sw-new" style="flex-wrap:wrap"><button class="sw-b" data-sw="import">📂 Importuj z pliku JSON</button>${play?'<button class="sw-b" data-sw="expcur">⬇ Eksportuj obecną grę (JSON)</button>':''}<input type="file" id="sw-file" accept=".json,application/json" style="display:none"></div>
   ${play?`<div class="sw-new"><input id="sw-name" maxlength="60" placeholder="Nazwa zapisu" value="${h(countriesLabel()+' · tura '+G.turn)}"><button class="sw-b sw-go" data-sw="new">💾 Zapisz nowy</button></div>`:''}
-  <div id="sw-list">${list.length?list.map(m=>`<div class="sw-row" data-id="${h(m.id)}"><div class="sw-t"><b>${h(m.name)}${m.auto?'<span class="sw-tag">AUTO</span>':''}</b><small>${h(m.country)} · tura ${m.turn} · ${h(m.date)} · ${h(m.scn)}</small><small>zapisano: ${h(ago(m.updated))} · ${fmtSize(m.size||0)}</small></div><div class="sw-a"><button class="sw-b sw-go" data-sw="load">▶ Wczytaj</button>${play&&!m.auto?'<button class="sw-b" data-sw="over">Nadpisz</button>':''}<button class="sw-b sw-del" data-sw="del">🗑 Usuń</button></div></div>`).join(''):'<div class="sw-empty">Brak zapisów. '+(play?'Wpisz nazwę i kliknij „Zapisz nowy”.':'Zacznij grę – zapisy pojawią się tutaj.')+'</div>'}</div>`;
+  <div id="sw-list">${list.length?list.map(m=>`<div class="sw-row" data-id="${h(m.id)}"><div class="sw-t"><b>${h(m.name)}${m.auto?'<span class="sw-tag">AUTO</span>':''}</b><small>${h(m.country)} · tura ${m.turn} · ${h(m.date)} · ${h(m.scn)}</small><small>zapisano: ${h(ago(m.updated))} · ${fmtSize(m.size||0)}</small></div><div class="sw-a"><button class="sw-b sw-go" data-sw="load">▶ Wczytaj</button><button class="sw-b" data-sw="exp" title="Pobierz zapis jako plik JSON">⬇ JSON</button>${play&&!m.auto?'<button class="sw-b" data-sw="over">Nadpisz</button>':''}<button class="sw-b sw-del" data-sw="del">🗑 Usuń</button></div></div>`).join(''):'<div class="sw-empty">Brak zapisów. '+(play?'Wpisz nazwę i kliknij „Zapisz nowy”.':'Zacznij grę – zapisy pojawią się tutaj.')+'</div>'}</div>`;
 }
 async function openSaves(){ov.classList.add('on');box.innerHTML='<div class="sw-empty">Wczytywanie listy…</div>';try{await renderSaves()}catch(e){box.innerHTML='<div class="sw-empty">Nie można odczytać zapisów: '+h(e.message)+'</div><button class="sw-b" data-sw="close">Zamknij</button>'}}
 window.swOpenSaves=openSaves;
@@ -8620,6 +8740,9 @@ box.addEventListener('click',async e=>{
  const act=b.dataset.sw,row=b.closest('.sw-row'),id=row&&row.dataset.id;
  try{
   if(act==='close'){closeSaves();return}
+  if(act==='import'){const f=$('sw-file');if(f)f.click();return}
+  if(act==='exp'){await exportSave(id);return}
+  if(act==='expcur'){await exportCurrent();return}
   if(act==='new'){
    const name=(($('sw-name')||{}).value||'').trim()||(countriesLabel()+' · tura '+G.turn);
    busyBtn(b,true);await saveGame({id:newId(),name});toast('💾 Zapisano: '+name);await renderSaves();return;
@@ -8642,6 +8765,12 @@ box.addEventListener('click',async e=>{
  }catch(err){console.error('[SW] zapisy',err);toast('⚠ '+(err&&err.message||err));try{await renderSaves()}catch(_){}}
 });
 
+box.addEventListener('change',async e=>{
+ const f=e.target;if(!f||f.id!=='sw-file'||!f.files||!f.files[0])return;
+ const file=f.files[0];f.value='';
+ try{toast('Importowanie…');const m=await importFile(file);toast('📂 Zaimportowano: '+m.name);await renderSaves();refreshMenuButtons()}
+ catch(err){console.error('[SW] import',err);toast('⚠ Import nie powiódł się: '+(err&&err.message||err))}
+});
 /* --- przycisk w HUD (w trakcie gry) + Ctrl+S = szybki zapis --- */
 trySet(()=>{
  const _rh=window.renderHUD;
@@ -8688,7 +8817,7 @@ async function refreshMenuButtons(){
  if(!cont){if(!M.querySelector('[data-a="single"]'))return;cont=document.createElement('div');cont.id='sw-cont';M.insertBefore(cont,M.firstChild)}
  try{
   const list=(await (await store()).list()).sort((a,b)=>b.updated-a.updated);
-  if(!list.length){cont.innerHTML='';return}
+  if(!list.length){cont.innerHTML=`<button class="big" data-sw-menu="saves"><span class="ic">📂</span><span class="tx"><b>Wczytaj grę</b><small>Importuj zapis z pliku JSON</small></span><span class="ar">›</span></button>`;return}
   const m=list[0];
   cont.innerHTML=`<button class="big go" data-sw-menu="continue"><span class="ic">▶</span><span class="tx"><b>Kontynuuj</b><small>${h(m.country)} · tura ${m.turn} · ${h(m.scn)} · ${h(ago(m.updated))}</small></span><span class="ar">›</span></button>
    <button class="big" data-sw-menu="saves"><span class="ic">💾</span><span class="tx"><b>Wczytaj grę</b><small>Zapisów: ${list.length} · usuwanie i wybór zapisu</small></span><span class="ar">›</span></button>`;
@@ -8717,22 +8846,36 @@ console.info('[SW+] łatka: ochrona tury + zapisy gry załadowane');
 
 </script>
 <script id="sw-badge-click">
-/* Wybór oddziału wyłącznie przez kliknięcie jego odznaki na mapie. */
+/* Wybór oddziału przez kliknięcie jego odznaki na mapie; ponowne kliknięcie (lub klik w mapę / Esc) odznacza. */
 (()=>{try{
  const up1=cv.onpointerup;
+ const deselect=()=>{UB.selectedUnitId=null;if(UB.mode==='qty'||UB.mode==='merge2'||UB.mode==='pick'||UB.mode==='lead'){UB.mode='home';UB.act=null}};
  cv.onpointerup=function(e){
+  let skip=false;
   try{
    if(ptr.size==1&&moved<6&&!G.busy&&G.phase==='play'&&!UB.mapPick&&!G.pc&&!MAP_PICK_FIELD&&!(typeof scenarioEditor!=='undefined'&&scenarioEditor.active)){
     const pl=G.players[G.cur],c=pl&&pl.c,B=window.SW_BADGES||[];
     for(let i=B.length-1;i>=0;i--){const b=B[i];
      if(b.c!==c||e.offsetX<b.x||e.offsetX>b.x+b.w||e.offsetY<b.y||e.offsetY>b.y+b.h)continue;
-     UB.selectedUnitId=b.u.id;UB.open=true;
-     if(UB.mode==='qty'||UB.mode==='merge2'||UB.mode==='pick'){UB.mode='home';UB.act=null}
+     if(UB.selectedUnitId===b.u.id){deselect()}
+     else{UB.selectedUnitId=b.u.id;UB.open=true;
+      if(UB.mode==='qty'||UB.mode==='merge2'||UB.mode==='pick'){UB.mode='home';UB.act=null}}
      renderUbar();draw();setTimeout(draw,90);
      ptr.delete(e.pointerId);d0=0;cv.style.cursor='grab';return}
+    /* klik w puste miejsce mapy przy zaznaczonym oddziale = odznacz */
+    if(UB.selectedUnitId!=null){deselect();skip=true}
    }
   }catch(err){console.warn('[SW badge click]',err)}
-  return up1.call(this,e)};
+  if(skip)window.__swSkipAutoSel=true;
+  try{return up1.call(this,e)}
+  finally{window.__swSkipAutoSel=false;if(skip){try{renderUbar();draw()}catch(_){}}}
+ };
+ addEventListener('keydown',e=>{
+  if(e.key!=='Escape'||UB.selectedUnitId==null||G.phase!=='play')return;
+  if(document.querySelector('#sw-live-settings-overlay.open,#sw-settings-win,#swdlg'))return;
+  if(UB.mapPick)UB.mapPick=false;
+  deselect();try{renderUbar();draw()}catch(_){}
+ });
 }catch(e){console.warn('[SW badge click patch]',e)}})();
 </script>
 
@@ -8765,11 +8908,11 @@ console.info('[SW+] łatka: ochrona tury + zapisy gry załadowane');
    }
   }catch(err){console.warn('[SW unit edit]',err)}
  };
- UBAR.addEventListener('click',e=>{
+ UBAR.addEventListener('click',async e=>{
   if(G.busy)return;const c=curC();if(!c||!canInv(c))return;
   const b=e.target.closest('button');if(!b)return;const D=b.dataset,u=selU(c);
   if(D.urename!==undefined){
-   if(!u)return;const v=prompt('Nowa nazwa oddziału (maks. 28 znaków):',u.name);if(v===null)return;
+   if(!u)return;const v=await _swAsk('Nowa nazwa oddziału (maks. 28 znaków):',u.name);if(v===null)return;
    const nm=v.replace(/\s+/g,' ').trim().slice(0,28);if(!nm){toast('Nazwa nie może być pusta');return}
    u.name=nm;u.cname=true;toast('Oddział nazywa się teraz: '+nm);renderUbar();draw();setTimeout(draw,60);return}
   if(D.uleader!==undefined){if(!u)return;UB.leadCands=ubNewLeaders();UB.mode='lead';renderUbar();return}
@@ -8783,4 +8926,100 @@ console.info('[SW+] łatka: ochrona tury + zapisy gry załadowane');
    toast('Nowy dowódca «'+u.name+'»: '+l.name+' · zapłacono '+gold(fee));uRef();return}
  });
 }catch(e){console.warn('[SW unit edit patch]',e)}})();
+</script>
+
+<script id="sw-patch-peace-trade">
+(()=>{'use strict';
+/* ===== A) Pokój zaproponowany przez wroga: przejmowane prowincje kosztują gwiazdki gracza ===== */
+try{
+ const _ap=window.applyPeace;
+ const val=q=>typeof starValue==='function'?starValue(q):(typeof pScore==='function'?pScore(q):1);
+ const fmt=v=>String(Math.round(v*10)/10);
+ if(typeof _ap==='function')window.applyPeace=function(a,b,take,give,extra){
+  let note='';
+  try{
+   const gv=b&&b.owner&&Array.isArray(give)?give.filter(q=>q&&q.c===a):[];
+   if(gv.length){
+    if(b.stars==null)b.stars=10;
+    let left=b.stars,paid=0;const ok=[];
+    for(const q of gv.slice().sort((x,y)=>val(y)-val(x))){const c=val(q);if(c<=left+1e-6){ok.push(q);left-=c;paid+=c}}
+    give=give.filter(q=>!gv.includes(q)||ok.includes(q));
+    b.stars=Math.max(0,Math.round((b.stars-paid)*10)/10);
+    if(paid>0.05)note+=' · ⭐ −'+fmt(paid)+' za przejęte prowincje';
+    if(ok.length<gv.length)note+=' · za mało gwiazdek: przejęto '+ok.length+' z '+gv.length+' oddawanych prowincji';
+   }
+  }catch(e){console.warn('[SW] koszt gwiazdek w pokoju',e)}
+  const msg=_ap.call(this,a,b,take,give,extra);
+  return typeof msg==='string'?msg+note:msg;
+ };
+ const _rp=window.renderPbar;
+ if(typeof _rp==='function')window.renderPbar=function(){
+  const r=_rp.apply(this,arguments);
+  try{
+   const P=G.pc,PB=document.getElementById('pbar');
+   if(P&&P.incoming&&PB&&PB.style.display!=='none'){
+    const me=P.b,gv=[...P.give].filter(q=>q.c===P.a),cost=typeof starCostOf==='function'?starCostOf(gv):0,have=me.stars==null?10:me.stars;
+    const old=PB.querySelector('.sw-stars-cost');if(old)old.remove();
+    if(gv.length){
+     const el=document.createElement('div');el.className='pl';
+     el.innerHTML='⭐ Przejęcie oddawanych prowincji kosztuje <b style="color:'+(have+1e-6>=cost?'#86efac':'#fca5a5')+'">'+fmt(cost)+'⭐</b> (masz '+fmt(have)+'⭐). Na co zabraknie gwiazdek, zostaje u dawnego właściciela.';
+     PB.insertBefore(el,PB.querySelector('.pr')||null);
+    }
+   }
+  }catch(_){}
+  return r;
+ };
+}catch(e){console.warn('[SW] łatka pokoju',e)}
+
+/* ===== B) Surowce w wymianie handlowej ===== */
+try{
+ const RES=[['wood','🪵 Drewno',80],['meat','🥩 Mięso',60],['iron','⛓ Żelazo',100],['copper','🟠 Miedź',100],['diamond','💎 Diament',500]];
+ const _x=window.xchg;
+ window.xchg=function(b){
+  _x.apply(this,arguments);
+  try{
+   const a=G.players[G.cur].c;
+   for(const[id,c]of[['x1',a],['x2',b]]){
+    const g=document.getElementById(id+'g');if(!g)continue;c.res=c.res||{};
+    g.insertAdjacentHTML('afterend','<div class="hint" style="margin:6px 0 2px">Surowce (cena w złocie za sztukę)</div>'+RES.map(([k,n,p])=>'<div style="display:flex;align-items:center;gap:6px;margin:2px 0"><span style="flex:1;font-size:12px">'+n+' <small>(maks. '+Math.floor(c.res[k]||0)+' · '+p+'🪙)</small></span><input id="'+id+'r_'+k+'" type="number" min="0" value="0" style="width:64px"></div>').join(''));
+   }
+   MCARD.style.maxHeight='85vh';MCARD.style.overflowY='auto';
+  }catch(e){console.warn('[SW] UI surowców',e)}
+ };
+ const _xs=window.xsend;
+ window.xsend=function(){
+  const a=G.players[G.cur]&&G.players[G.cur].c,b=G.xb;
+  if(!a||!b)return _xs.apply(this,arguments);
+  const v=i=>document.getElementById(i);
+  const rd=(id,c)=>{c.res=c.res||{};const o={};let any=false;for(const[k]of RES){const el=v(id+'r_'+k),n=Math.min(Math.floor(c.res[k]||0),Math.max(0,Math.floor(+(el&&el.value)||0)));if(n>0){o[k]=n;any=true}}return any?o:null};
+  const R1=rd('x1',a),R2=rd('x2',b);
+  if(!R1&&!R2)return _xs.apply(this,arguments);
+  const worth=R=>R?RES.reduce((s,[k,,p])=>s+(R[k]||0)*p,0):0;
+  const k=DK(a,b);if(a.tp<3){toast('Brak punktów rozmów (potrzeba 3)');return}
+  const gu=(c,id)=>{const u=c.units.find(x=>x.id==v(id+'u').value);if(!u)return null;return{u,n:Math.min(u.n,Math.max(1,Math.floor(+v(id+'n').value)||u.n))}};
+  const gp=(c,id)=>{const r=v(id+'p').value;if(r==='')return null;const q=PV[+r];return q&&q.c===c&&c.ps.length>1?q:null};
+  const g1=Math.min(a.money,Math.max(0,+v('x1g').value||0)),g2=Math.min(b.money,Math.max(0,+v('x2g').value||0)),t1=C.find(c=>c.n==v('x1a').value),t2=C.find(c=>c.n==v('x2a').value),al=v('xal').checked,un=v('xun').checked,U1=gu(a,'x1'),U2=gu(b,'x2'),P1=gp(a,'x1'),P2=gp(b,'x2');
+  const I=Math.max(1,income(b)),rel=relG(a,b);
+  if((al||un)&&rel<40){toast('Sojusz wymaga relacji co najmniej 40');return}
+  if(un&&rel<70){toast('Unia wymaga relacji co najmniej 70');return}
+  if(un&&!((a.nb||new Set()).has(b))){toast('Unia jest możliwa tylko między państwami sąsiadującymi');return}
+  if(un&&!al&&!termActive(G.ally,k)){toast('Najpierw zaznacz sojusz – unia wymaga sojuszu');return}
+  let s=g1-g2+worth(R1)-worth(R2)*1.25+uVal(U1)-uVal(U2)+pVal(P1)-pVal(P2);
+  if(t1)s+=I*(relG(b,t1)<-10?3:-1.5);if(t2)s-=I*(relG(b,t2)<-10?1:6);
+  if(al||un)s+=(rel-30)/70*I*4;if(un)s+=(rel-55)/50*I*5;
+  s+=rel*I*.05+I*(Math.random()-.5)*.4;a.tp=r2(a.tp-3);MODAL.classList.add('hide');
+  const was=!!G.union[k];
+  if(s<0){relS(a,b,rel-2);G.last=b.n+' odrzucili ofertę wymiany'}
+  else{a.money=r1(a.money-g1+g2);b.money=r1(b.money+g1-g2);
+   for(const[kk]of RES){const x=(R1&&R1[kk])||0,y=(R2&&R2[kk])||0;a.res[kk]=(a.res[kk]||0)-x+y;b.res[kk]=(b.res[kk]||0)+x-y}
+   if(U1)giveUnit(a,b,U1);if(U2)giveUnit(b,a,U2);if(P1)giveProv(a,b,P1);if(P2)giveProv(b,a,P2);
+   if(t1){startWar(a,t1);relS(a,t1,-80)}if(t2){startWar(b,t2);relS(b,t2,-80)}
+   if(un){G.union[k]=1;G.ally[k]=true;a.unions++;b.unions++}else if(al)G.ally[k]=G.turn+dipDuration();
+   relS(a,b,rel+8);G.last='✅ '+b.n+' przyjęli wymianę'}
+  if(G.union[k]&&!was)mergeUnion(a,b);
+  toast(G.last);rr();draw();
+ };
+}catch(e){console.warn('[SW] łatka handlu',e)}
+console.info('[SW+] łatka: pokój kosztuje gwiazdki, surowce w handlu');
+})();
 </script>
